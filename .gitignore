@@ -1,0 +1,7 @@
+node_modules/
+lib/
+*.tgz
+.DS_Store
+coverage/
+*.log
+.e2e-*/

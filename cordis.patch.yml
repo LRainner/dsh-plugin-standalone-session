@@ -1,0 +1,6 @@
+# dsh-plugin-standalone-session: additive sidebar/panel entries plus a composer
+# adapter. It never replaces the native New Session, workspace browser, picker,
+# session menus or chat surface.
+- insert:
+    - id: standalone-session
+      name: dsh-plugin-standalone-session

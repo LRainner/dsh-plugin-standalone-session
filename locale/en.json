@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Standalone Session",
+    "description": "Create and manage standalone DSH sessions that are not attached to any workspace."
+  }
+}
