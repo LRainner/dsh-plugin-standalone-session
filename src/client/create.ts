@@ -12,8 +12,8 @@ export interface StandaloneCreateDeps {
   readonly noHomeMessage: string
   /** Session Controller create. */
   create(options: { cwd: string; sessionId: string }): Promise<string>
-  /** Navigation: show the created session's conversation. */
-  open(sessionId: string): void
+  /** Optional navigation: show the created session's conversation. */
+  open?(sessionId: string): void
   readonly randomUuid?: UuidSource
 }
 
@@ -23,13 +23,13 @@ export function isAbsoluteHostPath(path: string): boolean {
 }
 
 /**
- * Create a standalone session with a durable marker cwd and open it.
+ * Create a standalone session with a durable marker cwd.
  *
  * Failure semantics: a throw from `create` propagates before `open`, so no
  * conversation is selected for a session that was never created. A throw from
  * `open` also propagates; the session itself remains valid and is listed by the
  * panel, which is better than deleting a session the Host already committed.
- * @param deps - injected host home, create, and navigation.
+ * @param deps - injected host home, create, and optional navigation.
  * @returns the session identity returned by the Session Controller.
  */
 export async function createStandaloneSession(deps: StandaloneCreateDeps): Promise<string> {
@@ -43,6 +43,6 @@ export async function createStandaloneSession(deps: StandaloneCreateDeps): Promi
   const sessionId = mintSessionId(deps.randomUuid)
   const cwd = makeStandaloneCwd(home, sessionId)
   const created = await deps.create({ cwd, sessionId })
-  deps.open(created)
+  deps.open?.(created)
   return created
 }

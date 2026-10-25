@@ -32,10 +32,19 @@ export type StandaloneKey =
   | 'panel.retry'
   | 'panel.archivedHint'
   | 'panel.loading'
+  | 'entry.label'
+  | 'launcher.creating'
+  | 'launcher.failedTitle'
+  | 'launcher.retry'
+  | 'launcher.manage'
+  | 'launcher.hint'
   | 'command.label'
   | 'command.description'
-  | 'footer.label'
-  | 'footer.tooltip'
+  | 'command.manageLabel'
+  | 'command.manageDescription'
+  | 'footer.manage'
+  | 'footer.manageTooltip'
+  | 'toast.manageFailed'
   | 'hero.badge'
   | 'hero.hint'
   | 'row.mark'
@@ -81,10 +90,19 @@ export const zh: StandaloneDict = {
   'panel.retry': '重试',
   'panel.archivedHint': '已删除的会话在 DSH 的归档视图中仍可恢复。',
   'panel.loading': '正在加载会话…',
+  'entry.label': '新建独立会话',
+  'launcher.creating': '正在创建独立会话…',
+  'launcher.failedTitle': '无法创建独立会话',
+  'launcher.retry': '重试',
+  'launcher.manage': '管理已有会话',
+  'launcher.hint': '点击左侧“新建独立会话”即可直接开始。',
   'command.label': '独立会话：新建',
   'command.description': '创建一个不属于任何工作区的独立会话。',
-  'footer.label': '新建独立会话',
-  'footer.tooltip': '新建独立会话（不占用任何工作区）',
+  'command.manageLabel': '独立会话：管理',
+  'command.manageDescription': '打开独立会话列表，支持打开、重命名和删除。',
+  'footer.manage': '管理独立会话',
+  'footer.manageTooltip': '打开独立会话列表，支持打开、重命名和删除。',
+  'toast.manageFailed': '无法打开管理面板：{message}',
   'hero.badge': '独立会话',
   'hero.hint': '不隶属于任何工作区',
   'row.mark': '独',
@@ -130,10 +148,19 @@ export const en: StandaloneDict = {
   'panel.retry': 'Retry',
   'panel.archivedHint': 'Deleted sessions remain recoverable from the native archived view.',
   'panel.loading': 'Loading sessions…',
+  'entry.label': 'New Standalone Session',
+  'launcher.creating': 'Creating a standalone session…',
+  'launcher.failedTitle': 'Could not create a standalone session',
+  'launcher.retry': 'Retry',
+  'launcher.manage': 'Manage sessions',
+  'launcher.hint': 'Choose New Standalone Session in the sidebar to start.',
   'command.label': 'Standalone Session: New',
   'command.description': 'Create a standalone session that belongs to no workspace.',
-  'footer.label': 'New standalone session',
-  'footer.tooltip': 'New standalone session (uses no workspace)',
+  'command.manageLabel': 'Standalone Session: Manage',
+  'command.manageDescription': 'Open the standalone session list to open, rename or delete sessions.',
+  'footer.manage': 'Manage standalone sessions',
+  'footer.manageTooltip': 'Open the standalone session list to open, rename or delete sessions.',
+  'toast.manageFailed': 'Could not open the manager: {message}',
   'hero.badge': 'Standalone',
   'hero.hint': 'Not attached to any workspace',
   'row.mark': 'S',

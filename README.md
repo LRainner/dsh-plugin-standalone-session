@@ -79,17 +79,22 @@ Desktop 配置仍应通过应用内 Plugin Manager 安装，CLI 不会代理该�
 
 ### 新建独立会话
 
-有三个入口，行为一致：
+主要入口是侧边栏顶部的 **`新建独立会话`（+）** 行：
 
-1. **侧边栏底部**：`新建独立会话` / `New standalone session`。
-2. **侧边栏“独立会话”面板**：点击面板行，再点 `新建独立会话`。
-3. **命令菜单**：在任意会话的输入框输入 `/`，选择 `独立会话：新建`（英文 `Standalone Session: New`）。
+- 点击这一行会**立即创建并进入**一个新的独立会话，不再先显示管理面板。
+- 如果上一次由这个入口创建的会话仍然是空白且仍然存在，会直接复用它，避免误点/连点产生大量空白会话。
+- 创建失败会停留在轻量的 launcher 页，提供“重试”和“管理已有会话”。
+
+其他入口：
+
+1. **管理面板**里的 `新建独立会话`：总是创建全新的空白会话。
+2. **命令菜单**：在任意会话的输入框输入 `/`，选择 `独立会话：新建`（英文 `Standalone Session: New`）。
 
 创建后会直接在**主视图**打开原生会话页。输入框、模型选择、附件按钮立即可用。
 
 ### 管理
 
-点击侧边栏的 **独立会话** 行打开管理面板：
+点击侧边栏底部的 **`管理独立会话`**，或使用命令菜单里的 `独立会话：管理` / `Standalone Session: Manage`，打开管理面板：
 
 - 列出所有未归档的独立会话（含空白的会话；原生侧边栏默认只显示当前空白会话）。
 - `打开`：切回原生会话页。
@@ -135,6 +140,7 @@ DSH 把“删除”实现为**归档**：会话从普通列表消失，但仍可
 其他部分：
 
 - **持久化标记**：会话的 `cwd` 是 `~/.dsh/dsh-standalone-sessions/<sessionId>`；`<sessionId>` 与目录名一致。这个标记写入 DSH 的会话 header，重启后仍然存在。宿主端另有 `~/.dsh/dsh-standalone-sessions/registry.json` 记录 `standalone: true`、`hadMessage`、清理状态等生命周期信息；浏览器端只依赖 cwd 标记，因此 registry 损坏不会导致会话“消失”。
+- **点击即新建**：`sidebar.panellist` 的行点击被 DSH 固定为 `selectPanel(id)`，插件无法替换整行动作。因此顶栏行指向一个专用的 launcher main panel：它挂载时创建（或复用空白）会话并 `openSession`，用户感知为“点一下就进入新对话”。launcher 还会记录一次真实行点击作为“arm”信号，布局/历史恢复该 panel 时只显示 CTA，不会静默创建会话。
 - **宿主端**：监听 `api-session/added` / `api-session/activity`，维护 registry；每 2s 读取 `workspaceRegistry.archivedSessionIds`，对已归档的独立会话执行清理；启动时回收失败的空白目录。
 - **并发创建**：每次创建由客户端铸造 `session-<uuid>`，目录唯一；registry 写入串行化并使用临时文件 + `rename` 原子替换。
 - **失败回滚**：创建失败时不会调用 `openSession`；宿主扫描会回收 60s 以上、没有 live session、且为空目录的残留。删除清理失败会记录并重试，不影响归档。
@@ -178,6 +184,7 @@ rm -rf ~/.dsh/dsh-standalone-sessions
 - **删除 = 归档**：DSH 没有公开的物理删除会话 API；已删除会话可从原生归档视图恢复。空白会话的目录会被清理；已使用会话的目录会保留。
 - **空白会话依赖本插件解锁输入区**：卸载后空白独立会话的输入区会回到原生 inert 状态。
 - **没有全局快捷键**：只注册了命令菜单项和侧边栏入口，避免与原生快捷键冲突。
+- **顶栏行本质是导航键**：DSH 的 `sidebar.panellist` 点击固定执行 `selectPanel`，插件通过 launcher main panel 实现“点击即创建”；如果未来 DSH 改变 panel/行语义，需要重新适配。
 - **没有自动模型回复测试**：本地验证使用了隔离的 DSH profile 和真实浏览器；首次消息成功写入并保持独立状态，但测试环境的 API Key 无效，模型返回 `API 密钥无效`。这不影响会话、输入区和独立标记的验证。
 
 ## 开发
@@ -186,7 +193,7 @@ rm -rf ~/.dsh/dsh-standalone-sessions
 npm install
 npm run typecheck   # tsc --noEmit
 npm run build       # 宿主 ESM + 客户端 Module Loader bundle + .d.ts
-npm test            # Vitest：39 个单元测试
+npm test            # Vitest：49 个单元测试
 npm run check       # typecheck + build + test
 ```
 
@@ -198,11 +205,15 @@ src/host/registry.ts        原子写入的 registry、目录清理策略
 src/shared/standalone.ts    纯函数：路径标记、id、registry 归一化、清理策略
 src/client/index.ts         客户端入口（slot 注册、命令、主题样式）
 src/client/adapters.ts      原生输入条适配器（仅解锁独立会话）
-src/client/components.tsx   独立会话面板、侧边栏入口、行 badge、toast
+src/client/components.tsx   独立会话面板、launcher、侧边栏入口、行 badge、toast
+src/client/launcher.ts      launcher 的创建去重、空白复用、点击 arm 策略
+src/client/panels.ts        main panel id（launcher / 管理）
 src/client/create.ts        创建策略（可注入测试）
 src/client/hooks.ts         Session/Workspace 可观察源的 React 绑定
 test/standalone.test.ts     创建策略、标记、回滚、composer 策略
 test/registry.test.ts       registry 持久化、并发、清理、失败重试、孤儿回收
+test/launcher.test.ts       launcher 创建去重、空白复用、arm 窗口
+test/actions.test.ts         管理入口与显式创建/打开
 ```
 
 构建产物：

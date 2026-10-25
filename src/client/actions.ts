@@ -5,6 +5,8 @@
  */
 import { createStandaloneSession } from './create.js'
 import type { ClientContext, Translate } from './dsh.js'
+import { PANEL_ID } from './panels.js'
+import { showNotice } from './notice.js'
 
 /** Host home, or undefined while the connection has not delivered it. */
 export function hostHome(ctx: ClientContext): string | undefined {
@@ -16,18 +18,46 @@ export function hostHome(ctx: ClientContext): string | undefined {
 }
 
 /**
+ * Create a standalone session without navigating. The launcher owns navigation
+ * so it can decline to steal focus after the user has already moved on.
+ * @param ctx - client root context.
+ * @param t - localized copy.
+ * @returns the created session id.
+ */
+export async function createStandaloneSessionId(
+  ctx: ClientContext,
+  t: Translate,
+): Promise<string> {
+  return createStandaloneSession({
+    home: hostHome(ctx),
+    noHomeMessage: t('error.noHome'),
+    create: (options) => ctx.sessions.create(options),
+  })
+}
+
+/**
  * Create a standalone session and open its native conversation.
  * @param ctx - client root context.
  * @param t - localized copy.
  * @returns the created session id.
  */
 export async function startStandalone(ctx: ClientContext, t: Translate): Promise<string> {
-  return createStandaloneSession({
-    home: hostHome(ctx),
-    noHomeMessage: t('error.noHome'),
-    create: (options) => ctx.sessions.create(options),
-    open: (sessionId) => ctx.uiWorkspace.openSession(sessionId),
-  })
+  const sessionId = await createStandaloneSessionId(ctx, t)
+  ctx.uiWorkspace.openSession(sessionId)
+  return sessionId
+}
+
+/**
+ * Open the existing management panel through the public layout service.
+ * @param ctx - client root context.
+ * @param t - localized copy.
+ */
+export function openManagementPanel(ctx: ClientContext, t: Translate): void {
+  try {
+    ctx.layout.selectPanel(PANEL_ID)
+  } catch (error) {
+    showNotice('error', t('toast.manageFailed', { message: messageOf(error) }))
+  }
 }
 
 /**

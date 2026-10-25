@@ -329,6 +329,73 @@ export const CSS = `
   color: var(--dsw-alias-label-primary, #1f2328);
   background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.18));
 }
+.ss-panelPlus {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  color: #fff;
+  background: var(--dsw-alias-state-business-primary, #2563eb);
+  box-shadow: 0 0 0 1.5px var(--dsw-specific-sidebar-fill, transparent);
+}
+.ss-launcher {
+  box-sizing: border-box;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--dsw-alias-label-primary, #1f2328);
+}
+.ss-launcherCard {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 430px;
+  padding: 30px 28px;
+  text-align: center;
+  border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.22));
+  border-radius: var(--dsw-radius-lg, 14px);
+  background: var(--dsw-alias-bg-elevated, rgba(255, 255, 255, 0.02));
+}
+.ss-launcherSpinner {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  border: 2px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.25));
+  border-top-color: var(--dsw-alias-state-business-primary, #2563eb);
+  animation: ss-spin 900ms linear infinite;
+}
+@keyframes ss-spin {
+  to { transform: rotate(360deg); }
+}
+.ss-launcherTitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.ss-launcherHint {
+  margin: 6px 0 0;
+  color: var(--dsw-alias-label-secondary, #59636e);
+  font-size: 13px;
+  line-height: 20px;
+}
+.ss-launcherActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
 .ss-heroBadge {
   margin-right: 4px;
 }

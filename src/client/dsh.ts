@@ -127,6 +127,11 @@ export interface CommandUiService {
   register(contribution: CommandContribution): () => void
 }
 
+/** Layout panel selection (`ctx.layout`). */
+export interface LayoutService {
+  selectPanel(panelId: string | null): void
+}
+
 /** One slot ledger entry (the registrant object behind a slot render). */
 export interface SlotEntry {
   readonly options?: {
@@ -153,6 +158,7 @@ export interface ClientContext {
   readonly workspaces: WorkspaceService
   readonly uiWorkspace: UiWorkspaceService
   readonly commandUi: CommandUiService
+  readonly layout: LayoutService
   readonly remote?: { readonly $host?: { readonly home?: string } }
   effect(execute: () => (() => void) | void, label?: string): unknown
   get(name: string): unknown

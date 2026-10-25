@@ -21,7 +21,9 @@ import {
 } from '../shared/standalone.js'
 import {
   archiveStandalone,
+  createStandaloneSessionId,
   messageOf,
+  openManagementPanel,
   renameStandalone,
   startStandalone,
 } from './actions.js'
@@ -32,6 +34,12 @@ import {
   useSessionList,
   useWorkspaceSnapshot,
 } from './hooks.js'
+import {
+  armStandaloneLauncher,
+  clearStandaloneLauncherArm,
+  isStandaloneLauncherArmed,
+  StandaloneLaunchCoordinator,
+} from './launcher.js'
 import { NS } from './locales.js'
 import { dismissNotice, getNoticeSnapshot, showNotice, subscribeNotice } from './notice.js'
 import type { ClientContext, SessionRow, Translate } from './dsh.js'
@@ -88,65 +96,192 @@ function useStandaloneRows(ctx: ClientContext): { rows: SessionRow[]; loading: b
   return { rows, loading: sessions.phase === 'pending' }
 }
 
-/** Sidebar global-panel icon with a live count badge. */
-export function createPanelIcon(ctx: ClientContext) {
-  const fallbackT = ctx.locale.bind(NS)
-  return function StandalonePanelIcon({
+/** Launcher glyph: a chat mark with a plus badge. */
+export function createLauncherEntryIcon() {
+  return function StandaloneLauncherIcon({
     size = 18,
     active = false,
-    t,
-  }: { readonly size?: number; readonly active?: boolean } & LocalizedProps): ReactElement {
-    const translate = t ?? fallbackT
-    const sessions = useSessionList(ctx)
-    const workspaces = useWorkspaceSnapshot(ctx)
-    const count = countStandalone(sessions, workspaces.archivedSessionIds)
+  }: {
+    readonly size?: number
+    readonly active?: boolean
+  }): ReactElement {
+    const ref = useRef<HTMLSpanElement>(null)
+    useEffect(() => {
+      const button = ref.current?.closest('button')
+      if (button == null) return
+      const arm = (): void => armStandaloneLauncher()
+      // Capture phase runs before the sidebar's own onClick -> selectPanel.
+      // The whole row (glyph and label) arms the launcher, while a layout or
+      // history restore never produces this click.
+      button.addEventListener('click', arm, true)
+      return () => button.removeEventListener('click', arm, true)
+    }, [])
     return (
-      <span className="ss-panelIcon" title={translate('panel.label')}>
+      <span ref={ref} className="ss-panelIcon">
         <StandaloneIcon size={size} active={active} />
-        {count > 0 ? (
-          <span className="ss-panelCount" aria-hidden="true">
-            {count > 99 ? '99+' : count}
-          </span>
-        ) : null}
+        <span className="ss-panelPlus" aria-hidden="true">
+          +
+        </span>
       </span>
     )
   }
 }
 
-/** Direct "New Standalone Session" sidebar footer action. */
-export function createFooterAction(ctx: ClientContext) {
+/** Sidebar footer action that opens the management panel. */
+export function createManageFooterAction(ctx: ClientContext) {
   const fallbackT = ctx.locale.bind(NS)
-  return function StandaloneFooterAction({
+  return function StandaloneManageFooterAction({
     wide = true,
     t,
   }: { readonly wide?: boolean } & LocalizedProps): ReactElement {
     const translate = t ?? fallbackT
-    const [busy, setBusy] = useState(false)
-    const create = async (): Promise<void> => {
-      if (busy) return
-      setBusy(true)
-      try {
-        await startStandalone(ctx, translate)
-      } catch (error) {
-        showNotice('error', translate('toast.createFailed', { message: messageOf(error) }))
-      } finally {
-        setBusy(false)
-      }
-    }
+    const sessions = useSessionList(ctx)
+    const workspaces = useWorkspaceSnapshot(ctx)
+    const count = countStandalone(sessions, workspaces.archivedSessionIds)
     return (
       <button
         type="button"
         className={`ss-footerAction${wide ? '' : ' ss-footerRail'}`}
-        aria-label={translate('footer.label')}
-        title={translate('footer.tooltip')}
-        disabled={busy}
-        onClick={() => {
-          void create()
-        }}
+        aria-label={translate('footer.manage')}
+        title={translate('footer.manageTooltip')}
+        onClick={() => openManagementPanel(ctx, translate)}
       >
-        <StandaloneIcon size={wide ? 15 : 18} />
-        {wide ? <span className="ss-footerLabel">{translate('footer.label')}</span> : null}
+        <span className="ss-panelIcon">
+          <StandaloneIcon size={wide ? 15 : 18} />
+          {count > 0 ? (
+            <span className="ss-panelCount" aria-hidden="true">
+              {count > 99 ? '99+' : count}
+            </span>
+          ) : null}
+        </span>
+        {wide ? <span className="ss-footerLabel">{translate('footer.manage')}</span> : null}
       </button>
+    )
+  }
+}
+
+/**
+ * Launcher main panel. Selecting the sidebar row mounts this component, which
+ * creates (or reuses a blank) standalone session and then opens its native
+ * conversation. A real row click must have armed it; a layout restore without
+ * a gesture gets an explicit CTA instead of a silent session.
+ */
+export function createStandaloneLauncher(ctx: ClientContext) {
+  const fallbackT = ctx.locale.bind(NS)
+  const coordinator = new StandaloneLaunchCoordinator({
+    sessions: () => ctx.sessions.list.getSnapshot(),
+    archivedSessionIds: () => ctx.workspaces.list.getSnapshot().archivedSessionIds,
+    create: () => createStandaloneSessionId(ctx, fallbackT),
+  })
+
+  return function StandaloneLauncher(props: LocalizedProps): ReactElement {
+    const t = props.t ?? fallbackT
+    const [phase, setPhase] = useState<'idle' | 'creating' | 'error'>(() =>
+      isStandaloneLauncherArmed() ? 'creating' : 'idle',
+    )
+    const [error, setError] = useState<string | null>(null)
+    const mounted = useRef(true)
+    useEffect(() => {
+      mounted.current = true
+      return () => {
+        mounted.current = false
+      }
+    }, [])
+
+    const run = async (): Promise<void> => {
+      setPhase('creating')
+      setError(null)
+      try {
+        const result = await coordinator.launch()
+        if (!mounted.current) return
+        ctx.uiWorkspace.openSession(result.sessionId)
+        setPhase('idle')
+      } catch (reason) {
+        if (!mounted.current) return
+        setError(messageOf(reason))
+        setPhase('error')
+      } finally {
+        clearStandaloneLauncherArm()
+      }
+    }
+
+    useEffect(() => {
+      if (!isStandaloneLauncherArmed()) {
+        setPhase((current) => (current === 'creating' ? 'idle' : current))
+        return
+      }
+      void run()
+      // The launcher is one-shot per mount; run closes over stable ctx/services.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    if (phase === 'creating') {
+      return (
+        <div className="ss-launcher">
+          <div className="ss-launcherCard" aria-live="polite">
+            <div className="ss-launcherSpinner" aria-hidden="true" />
+            <p className="ss-launcherTitle">{t('launcher.creating')}</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (phase === 'error') {
+      return (
+        <div className="ss-launcher">
+          <div className="ss-launcherCard" role="alert">
+            <p className="ss-launcherTitle">{t('launcher.failedTitle')}</p>
+            <p className="ss-launcherHint">
+              {t('panel.actionFailed', { message: error ?? '' })}
+            </p>
+            <div className="ss-launcherActions">
+              <button
+                type="button"
+                className="ss-button ss-buttonPrimary"
+                onClick={() => {
+                  void run()
+                }}
+              >
+                {t('launcher.retry')}
+              </button>
+              <button
+                type="button"
+                className="ss-button ss-buttonQuiet"
+                onClick={() => openManagementPanel(ctx, t)}
+              >
+                {t('launcher.manage')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="ss-launcher">
+        <div className="ss-launcherCard">
+          <p className="ss-launcherTitle">{t('entry.label')}</p>
+          <p className="ss-launcherHint">{t('launcher.hint')}</p>
+          <div className="ss-launcherActions">
+            <button
+              type="button"
+              className="ss-button ss-buttonPrimary"
+              onClick={() => {
+                void run()
+              }}
+            >
+              {t('entry.label')}
+            </button>
+            <button
+              type="button"
+              className="ss-button ss-buttonQuiet"
+              onClick={() => openManagementPanel(ctx, t)}
+            >
+              {t('launcher.manage')}
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 }

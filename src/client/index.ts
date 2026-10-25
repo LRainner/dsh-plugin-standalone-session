@@ -11,21 +11,22 @@ import type { ClientContext } from './dsh.js'
 import { patchComposer } from './adapters.js'
 import {
   StandaloneToast,
-  createFooterAction,
   createHeroBadge,
-  createPanelIcon,
+  createLauncherEntryIcon,
+  createManageFooterAction,
   createRowHover,
   createRowLeading,
+  createStandaloneLauncher,
   createStandalonePanel,
   StandaloneIcon,
 } from './components.js'
-import { startStandalone, messageOf } from './actions.js'
+import { messageOf, openManagementPanel, startStandalone } from './actions.js'
 import { NS, en, zh } from './locales.js'
 import { showNotice } from './notice.js'
+import { NEW_PANEL_ID, PANEL_ID } from './panels.js'
 import { insertStyles } from './styles.js'
 
-/** The keyed main-panel id and the matching sidebar row id. */
-export const PANEL_ID = 'standalone-sessions'
+export { NEW_PANEL_ID, PANEL_ID } from './panels.js'
 
 /** Services this client plugin requires. */
 export const inject = [
@@ -35,6 +36,7 @@ export const inject = [
   'workspaces',
   'uiWorkspace',
   'commandUi',
+  'layout',
   'remote',
 ]
 
@@ -57,7 +59,14 @@ export function apply(ctx: ClientContext): void {
   // carries the standalone marker.
   ctx.slots.inject('conversation.composer.bar', () => patchComposer(ctx, boundT))
 
-  // Dedicated area: a sidebar row plus the matching keyed main panel.
+  // Two keyed main panels: the launcher creates and opens a session; the
+  // manager lists existing sessions. The sidebar row points at the launcher.
+  ctx.slots.inject('main', () =>
+    ctx.slots.register(
+      { name: 'main', key: NEW_PANEL_ID, locale: NS },
+      createStandaloneLauncher(ctx),
+    ),
+  )
   ctx.slots.inject('main', () =>
     ctx.slots.register(
       { name: 'main', key: PANEL_ID, locale: NS },
@@ -68,25 +77,25 @@ export function apply(ctx: ClientContext): void {
     ctx.slots.register(
       {
         name: 'sidebar.panellist',
-        id: PANEL_ID,
+        id: NEW_PANEL_ID,
         order: 20,
         locale: NS,
-        label: () => boundT('panel.label'),
+        label: () => boundT('entry.label'),
       },
-      createPanelIcon(ctx),
+      createLauncherEntryIcon(),
     ),
   )
 
-  // Direct creation entry in the sidebar foot.
+  // The footer is the management entry; the launcher row is the create entry.
   ctx.slots.inject('sidebar.footer.action', () =>
     ctx.slots.register(
       {
         name: 'sidebar.footer.action',
-        id: 'standalone-session-new',
+        id: 'standalone-session-manage',
         order: 20,
         locale: NS,
       },
-      createFooterAction(ctx),
+      createManageFooterAction(ctx),
     ),
   )
 
@@ -139,7 +148,7 @@ export function apply(ctx: ClientContext): void {
     ),
   )
 
-  // Command-menu contribution (the `/` menu and the composer's command list).
+  // Command-menu contributions: explicit create and the management panel.
   ctx.effect(
     () =>
       ctx.commandUi.register({
@@ -160,6 +169,21 @@ export function apply(ctx: ClientContext): void {
           },
         },
       }),
-    'standalone-session: command',
+    'standalone-session: new command',
+  )
+  ctx.effect(
+    () =>
+      ctx.commandUi.register({
+        name: 'standalone-manage',
+        label: () => boundT('command.manageLabel'),
+        description: () => boundT('command.manageDescription'),
+        icon: StandaloneIcon,
+        available: () => true,
+        ui: {
+          kind: 'action',
+          run: () => openManagementPanel(ctx, boundT),
+        },
+      }),
+    'standalone-session: manage command',
   )
 }
