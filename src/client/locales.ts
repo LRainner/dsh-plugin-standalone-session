@@ -26,6 +26,8 @@ export type StandaloneKey =
   | 'panel.deleteKeepDir'
   | 'panel.cancel'
   | 'panel.renameTitle'
+  | 'panel.renameLabel'
+  | 'panel.more'
   | 'panel.save'
   | 'panel.titleRequired'
   | 'panel.actionFailed'
@@ -43,7 +45,12 @@ export type StandaloneKey =
   | 'command.manageLabel'
   | 'command.manageDescription'
   | 'footer.manage'
+  | 'footer.manageCount'
   | 'footer.manageTooltip'
+  | 'time.now'
+  | 'time.minutes'
+  | 'time.hours'
+  | 'time.days'
   | 'toast.manageFailed'
   | 'hero.badge'
   | 'hero.hint'
@@ -64,26 +71,28 @@ export type StandaloneDict = Readonly<Record<StandaloneKey, string>>
 export const zh: StandaloneDict = {
   'panel.label': '独立会话',
   'panel.title': '独立会话',
-  'panel.description': '不隶属于任何工作区的会话。它们使用 DSH 原生输入区，不占用项目工作区。',
+  'panel.description': '不隶属于任何工作区，使用 DSH 原生输入区。',
   'panel.new': '新建独立会话',
   'panel.empty': '还没有独立会话',
-  'panel.emptyHint': '创建一个空白会话，直接在原生输入区开始聊天。',
+  'panel.emptyHint': '点击下方按钮，创建一个空白会话开始。',
   'panel.badge': '独立',
   'panel.open': '打开',
   'panel.rename': '重命名',
   'panel.delete': '删除',
-  'panel.untitled': '未命名独立会话',
+  'panel.untitled': '未命名会话',
   'panel.blank': '空白',
   'panel.running': '运行中',
   'panel.cwd': '工作目录',
   'panel.count': '{n} 个会话',
   'panel.deleteTitle': '删除独立会话？',
   'panel.deleteBody':
-    '会话将从列表和原生会话视图中移除（DSH 以归档实现删除）。空白会话的临时目录会被清理；已经产生过消息的会话会保留其目录，便于日后恢复。',
+    '会话将从列表和原生会话视图中移除（DSH 以归档实现删除），但仍可在归档视图中恢复。空白会话的临时目录会被清理；已经产生过消息的会话会保留其目录。',
   'panel.deleteConfirm': '删除',
   'panel.deleteKeepDir': '该会话已有消息，目录会被保留。',
   'panel.cancel': '取消',
   'panel.renameTitle': '重命名独立会话',
+  'panel.renameLabel': '名称',
+  'panel.more': '更多操作',
   'panel.save': '保存',
   'panel.titleRequired': '标题不能为空',
   'panel.actionFailed': '操作失败：{message}',
@@ -101,9 +110,14 @@ export const zh: StandaloneDict = {
   'command.manageLabel': '独立会话：管理',
   'command.manageDescription': '打开独立会话列表，支持打开、重命名和删除。',
   'footer.manage': '管理独立会话',
+  'footer.manageCount': '管理独立会话（{n}）',
   'footer.manageTooltip': '打开独立会话列表，支持打开、重命名和删除。',
+  'time.now': '刚刚',
+  'time.minutes': '{n} 分钟前',
+  'time.hours': '{n} 小时前',
+  'time.days': '{n} 天前',
   'toast.manageFailed': '无法打开管理面板：{message}',
-  'hero.badge': '独立会话',
+  'hero.badge': '独立会话 · 无工作区',
   'hero.hint': '不隶属于任何工作区',
   'row.mark': '独',
   'row.hover': '独立会话 · 不属于任何工作区',
@@ -121,27 +135,28 @@ export const zh: StandaloneDict = {
 export const en: StandaloneDict = {
   'panel.label': 'Standalone',
   'panel.title': 'Standalone Sessions',
-  'panel.description':
-    'Sessions that belong to no workspace. They use the native DSH composer and occupy no project workspace.',
+  'panel.description': 'Workspace-free sessions using the native DSH composer.',
   'panel.new': 'New Standalone Session',
   'panel.empty': 'No standalone sessions yet',
-  'panel.emptyHint': 'Create a blank session and start chatting in the native composer.',
+  'panel.emptyHint': 'Use the button below to create a blank session.',
   'panel.badge': 'Standalone',
   'panel.open': 'Open',
   'panel.rename': 'Rename',
   'panel.delete': 'Delete',
-  'panel.untitled': 'Untitled standalone session',
+  'panel.untitled': 'Untitled session',
   'panel.blank': 'Blank',
   'panel.running': 'Running',
   'panel.cwd': 'Working directory',
   'panel.count': '{n} session(s)',
   'panel.deleteTitle': 'Delete standalone session?',
   'panel.deleteBody':
-    'The session leaves the list and the native session view (DSH implements deletion as archive). The temporary directory of an unused session is removed; a session that already carried messages keeps its directory for a later restore.',
+    'The session leaves the list and the native session view (DSH implements deletion as archive), and remains recoverable from the archived view. The directory of an unused session is removed; a session that already carried messages keeps its directory.',
   'panel.deleteConfirm': 'Delete',
   'panel.deleteKeepDir': 'This session already carried messages; its directory is retained.',
   'panel.cancel': 'Cancel',
   'panel.renameTitle': 'Rename standalone session',
+  'panel.renameLabel': 'Name',
+  'panel.more': 'More actions',
   'panel.save': 'Save',
   'panel.titleRequired': 'Title cannot be empty',
   'panel.actionFailed': 'Operation failed: {message}',
@@ -159,9 +174,14 @@ export const en: StandaloneDict = {
   'command.manageLabel': 'Standalone Session: Manage',
   'command.manageDescription': 'Open the standalone session list to open, rename or delete sessions.',
   'footer.manage': 'Manage standalone sessions',
+  'footer.manageCount': 'Manage standalone sessions ({n})',
   'footer.manageTooltip': 'Open the standalone session list to open, rename or delete sessions.',
+  'time.now': 'Just now',
+  'time.minutes': '{n} min ago',
+  'time.hours': '{n} hr ago',
+  'time.days': '{n} days ago',
   'toast.manageFailed': 'Could not open the manager: {message}',
-  'hero.badge': 'Standalone',
+  'hero.badge': 'Standalone · No workspace',
   'hero.hint': 'Not attached to any workspace',
   'row.mark': 'S',
   'row.hover': 'Standalone session · not attached to any workspace',

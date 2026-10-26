@@ -50,10 +50,9 @@ export const CSS = `
   line-height: 20px;
   margin-top: 6px;
 }
-.ss-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.ss-countInline {
+  margin-top: 0;
+  align-self: center;
 }
 .ss-button {
   font: inherit;
@@ -120,9 +119,12 @@ export const CSS = `
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 20px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
 }
 .ss-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -131,9 +133,22 @@ export const CSS = `
   border-radius: var(--dsw-radius-lg, 14px);
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.2));
   background: var(--dsw-alias-bg-elevated, rgba(255, 255, 255, 0.02));
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
 }
-.ss-row:hover {
+.ss-row:hover,
+.ss-row:focus-within {
   border-color: var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
+  background: var(--dsw-alias-interactive-bg-hover, #e9ebee);
+}
+.ss-row:focus-visible {
+  outline: var(--dsw-focus-ring-width, 2px) solid
+    var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #3b82f6));
+  outline-offset: 1px;
+}
+.ss-row[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.7;
 }
 .ss-rowMain {
   min-width: 0;
@@ -167,21 +182,105 @@ export const CSS = `
   min-width: 0;
   flex-wrap: wrap;
 }
-.ss-rowPath {
-  font-family: var(--ds-font-family-code, ui-monospace, SFMono-Regular, Menlo, monospace);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 380px;
-}
 .ss-dotSep {
   opacity: 0.5;
 }
 .ss-rowActions {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
   flex: none;
+}
+.ss-rowMenuButton {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dsw-radius-md, 10px);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, #818b98);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+.ss-row:hover .ss-rowMenuButton,
+.ss-row:focus-within .ss-rowMenuButton,
+.ss-rowMenuOpen .ss-rowMenuButton {
+  opacity: 1;
+}
+.ss-rowMenuButton:hover:not(:disabled) {
+  color: var(--dsw-alias-label-primary, #1f2328);
+  background: var(--dsw-alias-interactive-bg-hover, #e9ebee);
+}
+.ss-rowMenuButton:focus-visible {
+  opacity: 1;
+  outline: var(--dsw-focus-ring-width, 2px) solid
+    var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #3b82f6));
+  outline-offset: 1px;
+}
+.ss-rowMenuButton:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+.ss-rowMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 136px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
+  border-radius: var(--dsw-radius-md, 10px);
+  background: var(--dsw-alias-bg-elevated, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+}
+.ss-rowMenu button {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #1f2328);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+.ss-rowMenu button:hover:not(:disabled),
+.ss-rowMenu button:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover, #e9ebee);
+  outline: none;
+}
+.ss-rowMenu button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.ss-rowMenuDanger {
+  color: var(--dsw-alias-state-error-primary, #d1242f) !important;
+}
+.ss-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ss-statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
 }
 .ss-stateRunning {
   color: var(--dsw-alias-state-business-primary, #2563eb);
@@ -209,6 +308,19 @@ export const CSS = `
 }
 .ss-emptyAction {
   margin-top: 18px;
+}
+.ss-panelHint {
+  margin: 18px 0 0;
+  color: var(--dsw-alias-label-tertiary, #818b98);
+  font-size: 12px;
+  line-height: 20px;
+}
+.ss-fieldLabel {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--dsw-alias-label-secondary, #59636e);
+  font-size: 12px;
+  line-height: 18px;
 }
 .ss-error {
   margin-top: 16px;
@@ -311,41 +423,6 @@ export const CSS = `
   align-items: center;
   justify-content: center;
 }
-.ss-panelCount {
-  position: absolute;
-  top: -5px;
-  right: -7px;
-  min-width: 13px;
-  height: 13px;
-  padding: 0 3px;
-  box-sizing: border-box;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 700;
-  color: var(--dsw-alias-label-primary, #1f2328);
-  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.18));
-}
-.ss-panelPlus {
-  position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 700;
-  color: #fff;
-  background: var(--dsw-alias-state-business-primary, #2563eb);
-  box-shadow: 0 0 0 1.5px var(--dsw-specific-sidebar-fill, transparent);
-}
 .ss-launcher {
   box-sizing: border-box;
   min-height: 100%;
@@ -406,7 +483,7 @@ export const CSS = `
   width: 14px;
   height: 14px;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 700;
   color: var(--dsw-alias-label-primary-bluish, #1f4f8f);
@@ -453,11 +530,13 @@ export const CSS = `
   white-space: nowrap;
   border: 0;
 }
+@media (hover: none) {
+  .ss-rowMenuButton { opacity: 1; }
+}
 @media (max-width: 640px) {
   .ss-panel { padding: 20px 14px 40px; }
   .ss-row { flex-wrap: wrap; }
   .ss-rowActions { width: 100%; justify-content: flex-end; }
-  .ss-rowPath { max-width: 100%; }
 }
 `
 

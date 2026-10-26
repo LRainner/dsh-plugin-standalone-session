@@ -87,7 +87,7 @@ Desktop 配置仍应通过应用内 Plugin Manager 安装，CLI 不会代理该�
 
 其他入口：
 
-1. **管理面板**里的 `新建独立会话`：总是创建全新的空白会话。
+1. **管理面板为空时**：空状态里的 `新建独立会话` 总是创建全新的空白会话。
 2. **命令菜单**：在任意会话的输入框输入 `/`，选择 `独立会话：新建`（英文 `Standalone Session: New`）。
 
 创建后会直接在**主视图**打开原生会话页。输入框、模型选择、附件按钮立即可用。
@@ -97,7 +97,7 @@ Desktop 配置仍应通过应用内 Plugin Manager 安装，CLI 不会代理该�
 点击侧边栏底部的 **`管理独立会话`**，或使用命令菜单里的 `独立会话：管理` / `Standalone Session: Manage`，打开管理面板：
 
 - 列出所有未归档的独立会话（含空白的会话；原生侧边栏默认只显示当前空白会话）。
-- `打开`：切回原生会话页。
+- 点击会话行：切回原生会话页；行尾 `⋯` 菜单提供重命名和删除。
 - `重命名`：调用原生 Session Controller 的重命名能力，标题投影同步更新。
 - `删除`：调用原生归档（DSH 没有物理删除会话的公开 API）。
 
@@ -117,7 +117,7 @@ DSH 把“删除”实现为**归档**：会话从普通列表消失，但仍可
 | 工作区归属 | 属于某个工作区 | 不属于任何工作区 |
 | 工作区注册表 | 有对应工作区记录 | **没有**任何工作区记录 |
 | 侧边栏位置 | 工作区分组下 | 顶层“未分组” + 独立面板 |
-| badge | 无 | `独` / `独立` / `Standalone` |
+| badge | 无 | `独` / `独立会话 · 无工作区` |
 | 工作目录 | 工作区目录 | `~/.dsh/dsh-standalone-sessions/<sessionId>` |
 | 原生输入区 | 原生启用 | 由本插件解锁（仍是同一个原生 InputBar） |
 | 重启恢复 | 是 | 是（靠会话自身 cwd 标记 + 宿主 registry） |
@@ -193,7 +193,7 @@ rm -rf ~/.dsh/dsh-standalone-sessions
 npm install
 npm run typecheck   # tsc --noEmit
 npm run build       # 宿主 ESM + 客户端 Module Loader bundle + .d.ts
-npm test            # Vitest：49 个单元测试
+npm test            # Vitest：51 个单元测试
 npm run check       # typecheck + build + test
 ```
 
@@ -208,12 +208,14 @@ src/client/adapters.ts      原生输入条适配器（仅解锁独立会话）
 src/client/components.tsx   独立会话面板、launcher、侧边栏入口、行 badge、toast
 src/client/launcher.ts      launcher 的创建去重、空白复用、点击 arm 策略
 src/client/panels.ts        main panel id（launcher / 管理）
+src/client/format.ts        相对时间本地化
 src/client/create.ts        创建策略（可注入测试）
 src/client/hooks.ts         Session/Workspace 可观察源的 React 绑定
 test/standalone.test.ts     创建策略、标记、回滚、composer 策略
 test/registry.test.ts       registry 持久化、并发、清理、失败重试、孤儿回收
 test/launcher.test.ts       launcher 创建去重、空白复用、arm 窗口
 test/actions.test.ts         管理入口与显式创建/打开
+test/format.test.ts         相对时间本地化
 ```
 
 构建产物：

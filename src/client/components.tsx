@@ -7,6 +7,7 @@
  * and delete call the native Session/Workspace controllers.
  */
 import {
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -15,10 +16,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
-import {
-  isStandaloneCwd,
-  relativeTime,
-} from '../shared/standalone.js'
+import { isStandaloneCwd } from '../shared/standalone.js'
 import {
   archiveStandalone,
   createStandaloneSessionId,
@@ -40,8 +38,9 @@ import {
   isStandaloneLauncherArmed,
   StandaloneLaunchCoordinator,
 } from './launcher.js'
+import { relativeTimeLabel } from './format.js'
 import { NS } from './locales.js'
-import { dismissNotice, getNoticeSnapshot, showNotice, subscribeNotice } from './notice.js'
+import { dismissNotice, getNoticeSnapshot, subscribeNotice } from './notice.js'
 import type { ClientContext, SessionRow, Translate } from './dsh.js'
 
 interface LocalizedProps {
@@ -80,10 +79,45 @@ export function StandaloneIcon({
   )
 }
 
-function basenameOf(path: string | undefined): string {
-  if (typeof path !== 'string' || path === '') return ''
-  const segments = path.split(/[\\/]+/).filter(Boolean)
-  return segments.at(-1) ?? ''
+/** Chat bubble with an explicit plus: the create entry's own shape. */
+function StandaloneComposeIcon({
+  size = 16,
+  active = false,
+}: {
+  readonly size?: number
+  readonly active?: boolean
+}): ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      style={{ color: active ? 'var(--dsw-alias-state-business-primary, #2563eb)' : 'currentColor' }}
+    >
+      <path
+        d="M2.5 3.25c0-.69.56-1.25 1.25-1.25h8.5c.69 0 1.25.56 1.25 1.25v6.5c0 .69-.56 1.25-1.25 1.25H7.4L4.6 13.2a.55.55 0 0 1-.9-.43V11H3.75c-.69 0-1.25-.56-1.25-1.25v-6.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path d="M8 4.3v3.4M6.3 6h3.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** Compact list mark for the management footer action. */
+function StandaloneListIcon({ size = 16 }: { readonly size?: number }): ReactElement {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+      <path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="3" cy="4" r="0.8" fill="currentColor" />
+      <circle cx="3" cy="8" r="0.8" fill="currentColor" />
+      <circle cx="3" cy="12" r="0.8" fill="currentColor" />
+    </svg>
+  )
 }
 
 function useStandaloneRows(ctx: ClientContext): { rows: SessionRow[]; loading: boolean } {
@@ -118,10 +152,7 @@ export function createLauncherEntryIcon() {
     }, [])
     return (
       <span ref={ref} className="ss-panelIcon">
-        <StandaloneIcon size={size} active={active} />
-        <span className="ss-panelPlus" aria-hidden="true">
-          +
-        </span>
+        <StandaloneComposeIcon size={size} active={active} />
       </span>
     )
   }
@@ -138,23 +169,20 @@ export function createManageFooterAction(ctx: ClientContext) {
     const sessions = useSessionList(ctx)
     const workspaces = useWorkspaceSnapshot(ctx)
     const count = countStandalone(sessions, workspaces.archivedSessionIds)
+    const label =
+      count > 0 ? translate('footer.manageCount', { n: count }) : translate('footer.manage')
     return (
       <button
         type="button"
         className={`ss-footerAction${wide ? '' : ' ss-footerRail'}`}
-        aria-label={translate('footer.manage')}
+        aria-label={label}
         title={translate('footer.manageTooltip')}
         onClick={() => openManagementPanel(ctx, translate)}
       >
         <span className="ss-panelIcon">
-          <StandaloneIcon size={wide ? 15 : 18} />
-          {count > 0 ? (
-            <span className="ss-panelCount" aria-hidden="true">
-              {count > 99 ? '99+' : count}
-            </span>
-          ) : null}
+          <StandaloneListIcon size={wide ? 15 : 18} />
         </span>
-        {wide ? <span className="ss-footerLabel">{translate('footer.manage')}</span> : null}
+        {wide ? <span className="ss-footerLabel">{label}</span> : null}
       </button>
     )
   }
@@ -366,16 +394,46 @@ interface DialogFrameProps {
 
 function DialogFrame({ title, children, footer, onCancel, busy = false }: DialogFrameProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null)
+  const onCancelRef = useRef(onCancel)
+  const busyRef = useRef(busy)
+  onCancelRef.current = onCancel
+  busyRef.current = busy
   useEffect(() => {
+    const dialog = ref.current
+    if (dialog === null) return
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const focusables = (): HTMLElement[] =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      )
+    focusables()[0]?.focus()
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && !busy) {
+      if (event.key === 'Escape' && !busyRef.current) {
         event.preventDefault()
-        onCancel()
+        onCancelRef.current()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusables()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [busy, onCancel])
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      previous?.focus()
+    }
+  }, [])
   return (
     <div
       className="ss-dialogBackdrop"
@@ -450,11 +508,16 @@ function RenameDialog({
         </>
       }
     >
+      <label className="ss-fieldLabel" htmlFor="ss-rename-input">
+        {t('panel.renameLabel')}
+      </label>
       <input
+        id="ss-rename-input"
         ref={inputRef}
         className="ss-input"
         value={value}
         maxLength={200}
+        aria-invalid={error !== null}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
@@ -463,7 +526,7 @@ function RenameDialog({
           }
         }}
       />
-      {error !== null ? <div className="ss-error">{t('panel.actionFailed', { message: error })}</div> : null}
+      {error !== null ? <div className="ss-error">{error}</div> : null}
     </DialogFrame>
   )
 }
@@ -517,7 +580,7 @@ function DeleteDialog({
     >
       <p className="ss-dialogBody">{t('panel.deleteBody')}</p>
       {!row.blank ? <p className="ss-dialogBody">{t('panel.deleteKeepDir')}</p> : null}
-      {error !== null ? <div className="ss-error">{t('panel.actionFailed', { message: error })}</div> : null}
+      {error !== null ? <div className="ss-error">{error}</div> : null}
     </DialogFrame>
   )
 }
@@ -536,6 +599,30 @@ export function createStandalonePanel(ctx: ClientContext) {
     const [error, setError] = useState<string | null>(null)
     const [renameTarget, setRenameTarget] = useState<SessionRow | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<SessionRow | null>(null)
+    const [menuTarget, setMenuTarget] = useState<string | null>(null)
+    const menuRef = useRef<HTMLDivElement>(null)
+    const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+      if (menuTarget === null) return
+      menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      const onPointerDown = (event: PointerEvent): void => {
+        if (menuRef.current?.contains(event.target as Node)) return
+        setMenuTarget(null)
+      }
+      const onKeyDown = (event: KeyboardEvent): void => {
+        if (event.key === 'Escape') {
+          setMenuTarget(null)
+          menuButtonRef.current?.focus()
+        }
+      }
+      document.addEventListener('pointerdown', onPointerDown)
+      document.addEventListener('keydown', onKeyDown)
+      return () => {
+        document.removeEventListener('pointerdown', onPointerDown)
+        document.removeEventListener('keydown', onKeyDown)
+      }
+    }, [menuTarget])
 
     const create = async (): Promise<void> => {
       if (busy !== null) return
@@ -544,16 +631,20 @@ export function createStandalonePanel(ctx: ClientContext) {
       try {
         await startStandalone(ctx, t)
       } catch (reason) {
-        const message = messageOf(reason)
-        setError(t('panel.actionFailed', { message }))
-        showNotice('error', t('toast.createFailed', { message }))
+        setError(t('panel.actionFailed', { message: messageOf(reason) }))
       } finally {
         setBusy(null)
       }
     }
 
     const open = (row: SessionRow): void => {
-      ctx.uiWorkspace.openSession(row.id)
+      if (busy !== null) return
+      setMenuTarget(null)
+      try {
+        ctx.uiWorkspace.openSession(row.id)
+      } catch (reason) {
+        setError(t('panel.actionFailed', { message: messageOf(reason) }))
+      }
     }
 
     const rename = async (row: SessionRow, title: string): Promise<void> => {
@@ -562,7 +653,6 @@ export function createStandalonePanel(ctx: ClientContext) {
       try {
         await renameStandalone(ctx, row.id, title)
         setRenameTarget(null)
-        showNotice('info', t('toast.renamed'))
       } catch (reason) {
         throw new Error(messageOf(reason))
       } finally {
@@ -575,14 +665,19 @@ export function createStandalonePanel(ctx: ClientContext) {
       setError(null)
       try {
         await archiveStandalone(ctx, row.id)
+        // Archiving the active session makes DSH fall back to the New Session
+        // page. Keep the manager in place so deleting several rows is not a
+        // sequence of unexpected navigations.
+        openManagementPanel(ctx, t)
         setDeleteTarget(null)
-        showNotice('info', t('toast.deleted'))
       } catch (reason) {
-        throw new Error(t('toast.deleteFailed', { message: messageOf(reason) }))
+        throw new Error(messageOf(reason))
       } finally {
         setBusy(null)
       }
     }
+
+    const count = t('panel.count', { n: rows.length })
 
     return (
       <section className="ss-panel" aria-label={t('panel.title')}>
@@ -591,27 +686,17 @@ export function createStandalonePanel(ctx: ClientContext) {
             <div>
               <div className="ss-titleRow">
                 <h1 className="ss-title">{t('panel.title')}</h1>
-                <span className="ss-badge">{t('panel.badge')}</span>
+                <span className="ss-count ss-countInline">{count}</span>
               </div>
               <p className="ss-description">{t('panel.description')}</p>
-              <div className="ss-count">{t('panel.count', { n: rows.length })}</div>
-            </div>
-            <div className="ss-actions">
-              <button
-                type="button"
-                className="ss-button ss-buttonPrimary"
-                disabled={busy !== null}
-                onClick={() => {
-                  void create()
-                }}
-              >
-                <StandaloneIcon size={14} />
-                {t('panel.new')}
-              </button>
             </div>
           </header>
 
-          {error !== null ? <div className="ss-error">{error}</div> : null}
+          {error !== null ? (
+            <div className="ss-error" role="alert">
+              {error}
+            </div>
+          ) : null}
 
           {loading && rows.length === 0 ? (
             <div className="ss-empty">
@@ -630,65 +715,126 @@ export function createStandalonePanel(ctx: ClientContext) {
                     void create()
                   }}
                 >
-                  <StandaloneIcon size={14} />
+                  <StandaloneComposeIcon size={14} />
                   {t('panel.new')}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="ss-list">
-              {rows.map((row) => (
-                <div className="ss-row" key={row.id}>
-                  <div className="ss-rowMain">
-                    <div className="ss-rowTitleRow">
-                      <span className="ss-rowTitle" title={row.title ?? t('panel.untitled')}>
-                        {row.title?.trim() || t('panel.untitled')}
-                      </span>
-                      <span className="ss-badge">{t('panel.badge')}</span>
-                      {row.blank ? <span className="ss-count">{t('panel.blank')}</span> : null}
-                      {row.running ? <span className="ss-stateRunning">{t('panel.running')}</span> : null}
+            <ul className="ss-list">
+              {rows.map((row) => {
+                const title = row.title?.trim() || t('panel.untitled')
+                const updated = relativeTimeLabel(t, row.updatedAt)
+                const openMenu = menuTarget === row.id
+                const metaItems: ReactNode[] = []
+                if (updated !== '') metaItems.push(<span key="time">{updated}</span>)
+                if (row.running) {
+                  metaItems.push(
+                    <span key="running" className="ss-stateRunning">
+                      {t('panel.running')}
+                    </span>,
+                  )
+                }
+                if (row.blank) {
+                  metaItems.push(
+                    <span key="blank" className="ss-status">
+                      <span className="ss-statusDot" aria-hidden="true" />
+                      {t('panel.blank')}
+                    </span>,
+                  )
+                }
+                return (
+                  <li
+                    className={`ss-row${openMenu ? ' ss-rowMenuOpen' : ''}`}
+                    key={row.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-disabled={busy !== null}
+                    onClick={() => open(row)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        open(row)
+                      } else if (event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        setMenuTarget(row.id)
+                      }
+                    }}
+                  >
+                    <div className="ss-rowMain">
+                      <div className="ss-rowTitleRow">
+                        <span className="ss-rowTitle" title={title}>
+                          {title}
+                        </span>
+                      </div>
+                      {metaItems.length > 0 ? (
+                        <div className="ss-rowMeta">
+                          {metaItems.map((item, index) => (
+                            <Fragment key={index}>
+                              {index > 0 ? <span className="ss-dotSep">·</span> : null}
+                              {item}
+                            </Fragment>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="ss-rowMeta">
-                      <span>{relativeTime(row.updatedAt)}</span>
-                      <span className="ss-dotSep">·</span>
-                      <span className="ss-rowPath" title={row.cwd}>
-                        {basenameOf(row.cwd)}
-                      </span>
+                    <div className="ss-rowActions">
+                      <button
+                        type="button"
+                        className="ss-rowMenuButton"
+                        aria-label={t('panel.more')}
+                        aria-haspopup="menu"
+                        aria-expanded={openMenu}
+                        disabled={busy !== null}
+                        ref={openMenu ? menuButtonRef : undefined}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setMenuTarget(openMenu ? null : row.id)
+                        }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <span aria-hidden="true">⋯</span>
+                      </button>
+                      {openMenu ? (
+                        <div
+                          className="ss-rowMenu"
+                          role="menu"
+                          ref={menuRef}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setMenuTarget(null)
+                              setRenameTarget(row)
+                            }}
+                          >
+                            {t('panel.rename')}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="ss-rowMenuDanger"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setMenuTarget(null)
+                              setDeleteTarget(row)
+                            }}
+                          >
+                            {t('panel.delete')}
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                  <div className="ss-rowActions">
-                    <button
-                      type="button"
-                      className="ss-button ss-buttonQuiet"
-                      disabled={busy !== null}
-                      onClick={() => open(row)}
-                    >
-                      {t('panel.open')}
-                    </button>
-                    <button
-                      type="button"
-                      className="ss-button ss-buttonQuiet"
-                      disabled={busy !== null}
-                      onClick={() => setRenameTarget(row)}
-                    >
-                      {t('panel.rename')}
-                    </button>
-                    <button
-                      type="button"
-                      className="ss-button ss-buttonDanger"
-                      disabled={busy !== null}
-                      onClick={() => setDeleteTarget(row)}
-                    >
-                      {t('panel.delete')}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </li>
+                )
+              })}
+            </ul>
           )}
-          <p className="ss-count" style={{ marginTop: 18 }}>
-            {t('panel.archivedHint')}
-          </p>
+          <p className="ss-panelHint">{t('panel.archivedHint')}</p>
         </div>
         {renameTarget !== null ? (
           <RenameDialog
