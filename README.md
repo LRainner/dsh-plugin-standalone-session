@@ -20,7 +20,35 @@ DSH 原生输入区在“会话没有工作区”时会把输入区置为不可�
 
 ## 安装
 
-### 从本地 tarball 安装（本仓库验证方式）
+### 从 npm 安装（推荐）
+
+**Web 配置：**
+
+```bash
+dsh plugin --profile web add dsh-plugin-standalone-session
+```
+
+重启 `dsh web`，然后硬刷新页面（macOS `Cmd+Shift+R`）以获取新的客户端 bundle。
+
+**Desktop 配置：**
+
+DSH 0.2.1-rc.2 的 `dsh` CLI 会拒绝直接管理 desktop 配置：
+
+```text
+error: profile "desktop" is managed exclusively by the Electron application
+```
+
+这是设计行为，不是本插件的安装失败。Desktop 插件应通过应用内的 **插件 / Plugins** 页面安装：
+
+1. 打开 DeepSeek Harness 桌面应用。
+2. 侧边栏 → **插件** → 安装/添加插件。
+3. 输入 npm 包名 `dsh-plugin-standalone-session`（Plugin Manager 也接受 tarball 路径和绝对本地目录）。
+4. 安装完成后，完全退出并重新启动 DeepSeek Harness；宿主端插件只在进程启动时加载。
+5. 如果右侧/左侧 UI 没有立即变化，执行一次窗口重载（`Cmd+R`）。
+
+> 如果桌面应用正在运行，请优先使用应用内 Plugin Manager；不要在应用运行时直接改写 `~/.dsh/profiles/desktop` 下的依赖，以免与应用的 profile 管理冲突。
+
+### 从本地 tarball 安装（离线/开发）
 
 ```bash
 cd dsh-plugin-standalone-session
@@ -38,31 +66,9 @@ dsh plugin --profile web add /absolute/path/to/dsh-plugin-standalone-session-0.1
 
 重启 `dsh web`，然后硬刷新页面（macOS `Cmd+Shift+R`）以获取新的客户端 bundle。
 
-**Desktop 配置：**
+**Desktop 配置：** 使用应用内 **插件 / Plugins** 页面，输入 tarball 的绝对路径。
 
-DSH 0.2.1-rc.2 的 `dsh` CLI 会拒绝直接管理 desktop 配置：
-
-```text
-error: profile "desktop" is managed exclusively by the Electron application
-```
-
-这是设计行为，不是本插件的安装失败。Desktop 插件应通过应用内的 **插件 / Plugins** 页面安装：
-
-1. 打开 DeepSeek Harness 桌面应用。
-2. 侧边栏 → **插件** → 安装/添加插件。
-3. 输入本仓库 tarball 的**绝对路径**，或它解包后的**绝对目录**（Plugin Manager 接受 npm 包名、git URL、tarball 路径和绝对本地目录）。
-4. 安装完成后，完全退出并重新启动 DeepSeek Harness；宿主端插件只在进程启动时加载。
-5. 如果右侧/左侧 UI 没有立即变化，执行一次窗口重载（`Cmd+R`）。
-
-> 如果桌面应用正在运行，请优先使用应用内 Plugin Manager；不要在应用运行时直接改写 `~/.dsh/profiles/desktop` 下的依赖，以免与应用的 profile 管理冲突。
-
-本仓库**没有**执行 `npm publish`，也没有创建 GitHub Release。`dsh-plugin-standalone-session` 这个 npm 名称当前可用（`npm view` 返回 404）；如果将来发布，Web 配置仍可使用：
-
-```bash
-dsh plugin --profile web add dsh-plugin-standalone-session
-```
-
-Desktop 配置仍应通过应用内 Plugin Manager 安装，CLI 不会代理该配置。
+> **不要直接安装 GitHub 源码 tarball。** 仓库不包含构建后的 `lib/`，pnpm 会要求执行构建脚本，默认被供应链策略拦截并报 `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`。请使用 npm 包、本地 tarball，或按 pnpm 提示在 profile 的 `pnpm-workspace.yaml` 中显式允许对应 commit 的构建。
 
 ### 卸载
 
