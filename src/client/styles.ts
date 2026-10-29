@@ -22,8 +22,13 @@ export const CSS = `
   align-items: flex-start;
   gap: 16px;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-height: 58px;
   margin-bottom: 8px;
+}
+.ss-headerMain {
+  min-width: 0;
+  flex: 1;
 }
 .ss-titleRow {
   display: flex;
@@ -37,12 +42,17 @@ export const CSS = `
   font-weight: 600;
   margin: 0;
 }
-.ss-description {
+.ss-statusLine {
+  margin: 6px 0 0;
   color: var(--dsw-alias-label-secondary, #59636e);
   font-size: 13px;
   line-height: 20px;
-  margin: 6px 0 0;
-  max-width: 560px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ss-statusLineError {
+  color: var(--dsw-alias-state-error-primary, #d1242f);
 }
 .ss-count {
   color: var(--dsw-alias-label-tertiary, #818b98);
@@ -56,21 +66,27 @@ export const CSS = `
 }
 .ss-headerActions {
   display: flex;
+  flex: 0 0 176px;
+  width: 176px;
+  height: 32px;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
 }
-.ss-headerSelection {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  align-items: center;
-  padding: 8px 0;
-  background: var(--dsw-specific-main-fill, var(--dsw-alias-bg-elevated, #fff));
+.ss-deleteSlot {
+  width: 56px;
+  height: 32px;
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+}
+.ss-deleteSlot .ss-button {
+  min-width: 52px;
+  flex: none;
 }
 .ss-selectButton {
-  min-height: 30px;
+  min-height: 32px;
   padding: 3px 8px;
   border: 0;
   border-radius: var(--dsw-radius-md, 10px);
@@ -97,6 +113,8 @@ export const CSS = `
 .ss-button {
   font: inherit;
   display: inline-flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -187,10 +205,12 @@ export const CSS = `
 }
 .ss-row {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 28px;
+  column-gap: 14px;
   align-items: center;
-  gap: 14px;
   box-sizing: border-box;
+  height: 66px;
   padding: 12px 14px;
   border-radius: var(--dsw-radius-lg, 14px);
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.2));
@@ -212,9 +232,19 @@ export const CSS = `
   cursor: default;
   opacity: 0.7;
 }
+.ss-rowLead {
+  width: 18px;
+  height: 20px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dsw-alias-label-tertiary, #818b98);
+}
 .ss-rowMain {
   min-width: 0;
-  flex: 1;
+  width: 100%;
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -259,16 +289,21 @@ export const CSS = `
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .ss-dotSep {
   opacity: 0.5;
 }
 .ss-rowActions {
   position: relative;
+  grid-column: 3;
+  width: 28px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 0;
   flex: none;
 }
 .ss-rowMenuButton {
@@ -630,11 +665,7 @@ export const CSS = `
 @media (max-width: 640px) {
   .ss-panel { padding: 20px 14px 40px; }
   .ss-row { flex-wrap: nowrap; gap: 10px; }
-  .ss-headerSelection { align-items: flex-start; }
-  .ss-headerSelection .ss-headerActions {
-    width: 100%;
-    justify-content: flex-end;
-  }
+  .ss-headerActions { flex-basis: 176px; width: 176px; }
 }
 `
 

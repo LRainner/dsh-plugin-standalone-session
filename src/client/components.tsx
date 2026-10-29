@@ -416,7 +416,7 @@ function DialogFrame({ title, children, footer, onCancel, busy = false }: Dialog
           'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
         ),
       )
-    focusables()[0]?.focus()
+    focusables()[0]?.focus({ preventScroll: true })
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape' && !busyRef.current) {
         event.preventDefault()
@@ -439,7 +439,7 @@ function DialogFrame({ title, children, footer, onCancel, busy = false }: Dialog
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
-      previous?.focus()
+      previous?.focus({ preventScroll: true })
     }
   }, [])
   return (
@@ -695,6 +695,8 @@ export function createStandalonePanel(ctx: ClientContext) {
     const menuButtonRef = useRef<HTMLButtonElement>(null)
     const selectAllRef = useRef<HTMLInputElement>(null)
     const selectButtonRef = useRef<HTMLButtonElement>(null)
+    const panelRef = useRef<HTMLElement>(null)
+    const wasSelecting = useRef(false)
 
     const selected = useMemo(() => selectedRows(rows, selectedIds), [rows, selectedIds])
     const state = useMemo(() => selectionState(rows, selectedIds), [rows, selectedIds])
@@ -705,7 +707,6 @@ export function createStandalonePanel(ctx: ClientContext) {
       setSelectedIds(new Set())
       setMenuTarget(null)
       setError(null)
-      selectButtonRef.current?.focus()
     }
 
     const enterSelection = (): void => {
@@ -746,8 +747,15 @@ export function createStandalonePanel(ctx: ClientContext) {
     }, [rows, selectedIds, selectionMode])
 
     useEffect(() => {
-      if (selectionMode) selectAllRef.current?.focus()
+      if (selectionMode) selectAllRef.current?.focus({ preventScroll: true })
     }, [selectionMode])
+
+    useEffect(() => {
+      if (wasSelecting.current && !selectionMode && rows.length > 0) {
+        selectButtonRef.current?.focus({ preventScroll: true })
+      }
+      wasSelecting.current = selectionMode
+    }, [selectionMode, rows.length])
 
     useEffect(() => {
       if (selectAllRef.current !== null) selectAllRef.current.indeterminate = state.some
@@ -819,15 +827,23 @@ export function createStandalonePanel(ctx: ClientContext) {
       }
     }
 
+    const reopenIfUnmounted = (): void => {
+      window.setTimeout(() => {
+        if (panelRef.current === null || !panelRef.current.isConnected) {
+          openManagementPanel(ctx, t)
+        }
+      }, 0)
+    }
+
     const remove = async (row: SessionRow): Promise<void> => {
       setBusy(row.id)
       setError(null)
       try {
         await archiveStandalone(ctx, row.id)
-        // Archiving the active session makes DSH fall back to the New Session
-        // page. Keep the manager in place so deleting several rows is not a
-        // sequence of unexpected navigations.
-        openManagementPanel(ctx, t)
+        // Archiving the active session may navigate away. Only reopen when the
+        // panel actually unmounted; selecting the same panel again is a no-op
+        // that can still cause a visible repaint in the host.
+        reopenIfUnmounted()
         setDeleteTarget(null)
       } catch (reason) {
         throw new Error(messageOf(reason))
@@ -862,13 +878,13 @@ export function createStandalonePanel(ctx: ClientContext) {
           setError(message)
           showNotice('error', message)
         }
-        openManagementPanel(ctx, t)
+        reopenIfUnmounted()
       } catch (reason) {
         setBatchTargets(null)
         const message = t('panel.actionFailed', { message: messageOf(reason) })
         setError(message)
         showNotice('error', message)
-        openManagementPanel(ctx, t)
+        reopenIfUnmounted()
       } finally {
         setBatchProgress(null)
       }
@@ -877,10 +893,10 @@ export function createStandalonePanel(ctx: ClientContext) {
     const count = t('panel.count', { n: rows.length })
 
     return (
-      <section className="ss-panel" aria-label={t('panel.title')}>
+      <section ref={panelRef} className="ss-panel" aria-label={t('panel.title')}>
         <div className="ss-shell">
           <header
-            className={`ss-header${selectionMode ? ' ss-headerSelection' : ''}`}
+            className="ss-header"
             role={selectionMode ? 'toolbar' : undefined}
             aria-label={selectionMode ? t('panel.selectToolbar') : undefined}
           >
@@ -893,9 +909,14 @@ export function createStandalonePanel(ctx: ClientContext) {
                     : count}
                 </span>
               </div>
-              {!selectionMode ? (
-                <p className="ss-description">{t('panel.description')}</p>
-              ) : null}
+              <p
+                className={`ss-statusLine${error !== null ? ' ss-statusLineError' : ''}`}
+                role={error !== null ? 'alert' : undefined}
+                title={error ?? undefined}
+              >
+                {error ??
+                  (selectionMode ? t('panel.selectionHint') : t('panel.description'))}
+              </p>
             </div>
             <div className="ss-headerActions">
               {selectionMode ? (
@@ -912,16 +933,18 @@ export function createStandalonePanel(ctx: ClientContext) {
                     />
                     <span>{t('panel.selectAll')}</span>
                   </label>
-                  {state.count > 0 ? (
-                    <button
-                      type="button"
-                      className="ss-button ss-buttonDanger"
-                      disabled={locked}
-                      onClick={beginBatch}
-                    >
-                      {t('panel.batchDelete')}
-                    </button>
-                  ) : null}
+                  <span className="ss-deleteSlot">
+                    {state.count > 0 ? (
+                      <button
+                        type="button"
+                        className="ss-button ss-buttonDanger"
+                        disabled={locked}
+                        onClick={beginBatch}
+                      >
+                        {t('panel.batchDelete')}
+                      </button>
+                    ) : null}
+                  </span>
                   <button
                     type="button"
                     className="ss-selectButton"
@@ -945,11 +968,6 @@ export function createStandalonePanel(ctx: ClientContext) {
             </div>
           </header>
 
-          {error !== null ? (
-            <div className="ss-error" role="alert">
-              {error}
-            </div>
-          ) : null}
 
           {loading && rows.length === 0 ? (
             <div className="ss-empty">
@@ -1004,16 +1022,20 @@ export function createStandalonePanel(ctx: ClientContext) {
                     }`}
                     key={row.id}
                   >
-                    {selectionMode ? (
-                      <input
-                        type="checkbox"
-                        className="ss-checkbox"
-                        checked={checked}
-                        disabled={locked}
-                        aria-label={t('panel.selectRow', { title })}
-                        onChange={() => toggleRow(row.id)}
-                      />
-                    ) : null}
+                    <span className="ss-rowLead">
+                      {selectionMode ? (
+                        <input
+                          type="checkbox"
+                          className="ss-checkbox"
+                          checked={checked}
+                          disabled={locked}
+                          aria-label={t('panel.selectRow', { title })}
+                          onChange={() => toggleRow(row.id)}
+                        />
+                      ) : (
+                        <StandaloneIcon size={14} />
+                      )}
+                    </span>
                     <button
                       type="button"
                       className="ss-rowMain"
@@ -1046,66 +1068,66 @@ export function createStandalonePanel(ctx: ClientContext) {
                         </div>
                       ) : null}
                     </button>
-                    {!selectionMode ? (
-                      <div className="ss-rowActions">
-                        <button
-                          type="button"
-                          className="ss-rowMenuButton"
-                          aria-label={t('panel.more')}
-                          aria-haspopup="menu"
-                          aria-expanded={openMenu}
-                          disabled={locked}
-                          ref={openMenu ? menuButtonRef : undefined}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setMenuTarget(openMenu ? null : row.id)
-                          }}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <span aria-hidden="true">⋯</span>
-                        </button>
-                        {openMenu ? (
-                          <div
-                            className="ss-rowMenu"
-                            role="menu"
-                            ref={menuRef}
-                            onClick={(event) => event.stopPropagation()}
+                    <div className="ss-rowActions">
+                      {!selectionMode ? (
+                        <>
+                          <button
+                            type="button"
+                            className="ss-rowMenuButton"
+                            aria-label={t('panel.more')}
+                            aria-haspopup="menu"
+                            aria-expanded={openMenu}
+                            disabled={locked}
+                            ref={openMenu ? menuButtonRef : undefined}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setMenuTarget(openMenu ? null : row.id)
+                            }}
+                            onKeyDown={(event) => event.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              role="menuitem"
-                              disabled={locked}
-                              onClick={() => {
-                                setMenuTarget(null)
-                                setRenameTarget(row)
-                              }}
+                            <span aria-hidden="true">⋯</span>
+                          </button>
+                          {openMenu ? (
+                            <div
+                              className="ss-rowMenu"
+                              role="menu"
+                              ref={menuRef}
+                              onClick={(event) => event.stopPropagation()}
                             >
-                              {t('panel.rename')}
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              className="ss-rowMenuDanger"
-                              disabled={locked}
-                              onClick={() => {
-                                setMenuTarget(null)
-                                setDeleteTarget(row)
-                              }}
-                            >
-                              {t('panel.delete')}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={locked}
+                                onClick={() => {
+                                  setMenuTarget(null)
+                                  setRenameTarget(row)
+                                }}
+                              >
+                                {t('panel.rename')}
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className="ss-rowMenuDanger"
+                                disabled={locked}
+                                onClick={() => {
+                                  setMenuTarget(null)
+                                  setDeleteTarget(row)
+                                }}
+                              >
+                                {t('panel.delete')}
+                              </button>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
                   </li>
                 )
               })}
             </ul>
           )}
-          {!selectionMode ? (
-            <p className="ss-panelHint">{t('panel.archivedHint')}</p>
-          ) : null}
+          <p className="ss-panelHint">{t('panel.archivedHint')}</p>
         </div>
         {batchTargets !== null ? (
           <BatchDeleteDialog

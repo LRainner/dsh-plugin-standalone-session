@@ -27,6 +27,7 @@ export type StandaloneKey =
   | 'panel.selectToolbar'
   | 'panel.selectAll'
   | 'panel.selectAllLabel'
+  | 'panel.selectionHint'
   | 'panel.selectedCount'
   | 'panel.selectRow'
   | 'panel.batchDelete'
@@ -105,6 +106,7 @@ export const zh: StandaloneDict = {
   'panel.selectToolbar': '批量选择',
   'panel.selectAll': '全选',
   'panel.selectAllLabel': '全选独立会话',
+  'panel.selectionHint': '点击会话行选择，或使用全选。',
   'panel.selectedCount': '已选 {n} / {total}',
   'panel.selectRow': '选择“{title}”',
   'panel.batchDelete': '删除',
@@ -183,6 +185,7 @@ export const en: StandaloneDict = {
   'panel.selectToolbar': 'Bulk selection',
   'panel.selectAll': 'Select all',
   'panel.selectAllLabel': 'Select all standalone sessions',
+  'panel.selectionHint': 'Select rows, or use Select all.',
   'panel.selectedCount': '{n} / {total} selected',
   'panel.selectRow': 'Select "{title}"',
   'panel.batchDelete': 'Delete',
