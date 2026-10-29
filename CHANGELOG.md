@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.1...v0.2.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* adapt standalone manager to dark theme ([f1a8deb](https://github.com/LRainner/dsh-plugin-standalone-session/commit/f1a8debf9a3d7997fd13c48a8507cf118f2afb5a))
+
 ## [0.2.1](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.0...v0.2.1) (2026-10-29)
 
 
