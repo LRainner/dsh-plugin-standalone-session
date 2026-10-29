@@ -57,7 +57,17 @@ export const CSS = `
 .ss-headerActions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
+}
+.ss-headerSelection {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  align-items: center;
+  padding: 8px 0;
+  background: var(--dsw-specific-main-fill, var(--dsw-alias-bg-elevated, #fff));
 }
 .ss-selectButton {
   min-height: 30px;
@@ -145,21 +155,6 @@ export const CSS = `
   background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.12));
   border: 0.5px solid var(--dsw-alias-interactive-bg-hover, rgba(59, 130, 246, 0.18));
 }
-.ss-selectionBar {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 12px;
-  margin-top: 12px;
-  padding: 8px 10px;
-  border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.22));
-  border-radius: var(--dsw-radius-md, 10px);
-  background: var(--dsw-alias-bg-elevated, #fff);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-}
 .ss-selectAll {
   display: inline-flex;
   align-items: center;
@@ -181,15 +176,6 @@ export const CSS = `
 .ss-checkbox:disabled {
   cursor: default;
   opacity: 0.55;
-}
-.ss-selectedCount {
-  color: var(--dsw-alias-label-tertiary, #818b98);
-  font-size: 12px;
-  line-height: 20px;
-  white-space: nowrap;
-}
-.ss-selectionBar > .ss-button {
-  margin-left: auto;
 }
 .ss-list {
   display: flex;
@@ -221,7 +207,6 @@ export const CSS = `
 .ss-rowSelected:hover,
 .ss-rowSelected:focus-within {
   border-color: var(--dsw-alias-state-business-primary, #3b82f6);
-  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.12));
 }
 .ss-row[aria-disabled="true"] {
   cursor: default;
@@ -476,46 +461,6 @@ export const CSS = `
   gap: 8px;
   margin-top: 18px;
 }
-.ss-batchList {
-  max-height: 168px;
-  overflow: auto;
-  margin: 0 0 12px;
-  padding: 0;
-  list-style: none;
-  border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.22));
-  border-radius: var(--dsw-radius-sm, 8px);
-}
-.ss-batchItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 7px 9px;
-  border-bottom: 0.5px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.14));
-  font-size: 13px;
-  line-height: 18px;
-}
-.ss-batchItem:last-child {
-  border-bottom: 0;
-}
-.ss-batchTitle {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ss-batchState {
-  flex: none;
-  color: var(--dsw-alias-label-tertiary, #818b98);
-  font-size: 12px;
-}
-.ss-batchMore,
-.ss-batchDirs {
-  margin: 0 0 10px;
-  color: var(--dsw-alias-label-tertiary, #818b98);
-  font-size: 12px;
-  line-height: 18px;
-}
 .ss-batchWarning {
   margin: 0 0 10px;
   color: var(--dsw-alias-label-primary, #1f2328);
@@ -523,27 +468,11 @@ export const CSS = `
   line-height: 18px;
   font-weight: 600;
 }
-.ss-batchProgressWrap {
-  margin: 0 0 4px;
-}
-.ss-batchProgressText {
-  margin-bottom: 5px;
-  color: var(--dsw-alias-label-secondary, #59636e);
+.ss-batchDirs {
+  margin: 0 0 10px;
+  color: var(--dsw-alias-label-tertiary, #818b98);
   font-size: 12px;
   line-height: 18px;
-}
-.ss-batchProgress {
-  height: 4px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.16));
-}
-.ss-batchProgress span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--dsw-alias-state-business-primary, #2563eb);
-  transition: width 120ms ease;
 }
 .ss-footerAction {
   box-sizing: border-box;
@@ -701,10 +630,11 @@ export const CSS = `
 @media (max-width: 640px) {
   .ss-panel { padding: 20px 14px 40px; }
   .ss-row { flex-wrap: nowrap; gap: 10px; }
-  .ss-selectionBar { align-items: center; gap: 8px; }
-  .ss-selectedCount { order: 3; width: 100%; }
-  .ss-selectionBar > .ss-button { margin-left: auto; }
-  .ss-batchList { max-height: 132px; }
+  .ss-headerSelection { align-items: flex-start; }
+  .ss-headerSelection .ss-headerActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 `
 

@@ -24,24 +24,18 @@ export type StandaloneKey =
   | 'panel.deleteBody'
   | 'panel.deleteConfirm'
   | 'panel.select'
-  | 'panel.exitSelection'
   | 'panel.selectToolbar'
   | 'panel.selectAll'
   | 'panel.selectAllLabel'
   | 'panel.selectedCount'
   | 'panel.selectRow'
   | 'panel.batchDelete'
-  | 'panel.batchDeleteCount'
   | 'panel.batchDeleteTitle'
   | 'panel.batchDeleteBody'
-  | 'panel.batchDeleteMore'
   | 'panel.batchDeleteRunning'
   | 'panel.batchDeleteDirs'
   | 'panel.batchDeleting'
   | 'panel.batchPartial'
-  | 'panel.batchArchived'
-  | 'panel.batchDeleteList'
-  | 'panel.batchDeleteConfirm'
   | 'panel.deleteKeepDir'
   | 'panel.cancel'
   | 'panel.renameTitle'
@@ -108,25 +102,19 @@ export const zh: StandaloneDict = {
     '会话将从列表和原生会话视图中移除（DSH 以归档实现删除），但仍可在归档视图中恢复。空白会话的临时目录会被清理；已经产生过消息的会话会保留其目录。',
   'panel.deleteConfirm': '删除',
   'panel.select': '选择',
-  'panel.exitSelection': '退出选择',
   'panel.selectToolbar': '批量选择',
   'panel.selectAll': '全选',
   'panel.selectAllLabel': '全选独立会话',
-  'panel.selectedCount': '已选 {n} 项',
+  'panel.selectedCount': '已选 {n} / {total}',
   'panel.selectRow': '选择“{title}”',
   'panel.batchDelete': '删除',
-  'panel.batchDeleteCount': '删除 {n} 个',
   'panel.batchDeleteTitle': '删除 {n} 个独立会话？',
-  'panel.batchDeleteBody': '将归档以下会话。已归档会话可在 DSH 的归档视图中恢复。',
-  'panel.batchDeleteMore': '还有 {n} 个',
+  'panel.batchDeleteBody': '将归档这 {n} 个会话，可在归档视图中恢复。',
   'panel.batchDeleteRunning': '其中 {n} 个正在运行，归档会停止它们。',
   'panel.batchDeleteDirs':
     '空白且目录为空的会话会清理工作目录；已有消息或目录非空的会话会保留目录。',
-  'panel.batchDeleting': '正在删除 {done}/{total}…',
+  'panel.batchDeleting': '归档中 {done}/{total}…',
   'panel.batchPartial': '{n} 个会话归档失败，已保留选中状态。',
-  'panel.batchArchived': '已归档 {n} 个会话',
-  'panel.batchDeleteList': '待归档的会话',
-  'panel.batchDeleteConfirm': '删除 {n} 个',
   'panel.deleteKeepDir': '该会话已有消息，目录会被保留。',
   'panel.cancel': '取消',
   'panel.renameTitle': '重命名独立会话',
@@ -192,26 +180,20 @@ export const en: StandaloneDict = {
     'The session leaves the list and the native session view (DSH implements deletion as archive), and remains recoverable from the archived view. The directory of an unused session is removed; a session that already carried messages keeps its directory.',
   'panel.deleteConfirm': 'Delete',
   'panel.select': 'Select',
-  'panel.exitSelection': 'Exit selection',
   'panel.selectToolbar': 'Bulk selection',
   'panel.selectAll': 'Select all',
   'panel.selectAllLabel': 'Select all standalone sessions',
-  'panel.selectedCount': '{n} selected',
+  'panel.selectedCount': '{n} / {total} selected',
   'panel.selectRow': 'Select "{title}"',
   'panel.batchDelete': 'Delete',
-  'panel.batchDeleteCount': 'Delete {n}',
   'panel.batchDeleteTitle': 'Delete {n} standalone session(s)?',
   'panel.batchDeleteBody':
-    'The following sessions will be archived. Archived sessions can be restored from the DSH archived view.',
-  'panel.batchDeleteMore': '+{n} more',
+    'The {n} selected session(s) will be archived and can be restored from the archived view.',
   'panel.batchDeleteRunning': '{n} session(s) are running; archiving will stop them.',
   'panel.batchDeleteDirs':
     'Blank sessions with empty directories lose their working directory; sessions with messages or non-empty directories keep theirs.',
-  'panel.batchDeleting': 'Deleting {done}/{total}…',
+  'panel.batchDeleting': 'Archiving {done}/{total}…',
   'panel.batchPartial': 'Failed to archive {n} session(s); selection was kept.',
-  'panel.batchArchived': 'Archived {n} session(s)',
-  'panel.batchDeleteList': 'Sessions to archive',
-  'panel.batchDeleteConfirm': 'Delete {n}',
   'panel.deleteKeepDir': 'This session already carried messages; its directory is retained.',
   'panel.cancel': 'Cancel',
   'panel.renameTitle': 'Rename standalone session',

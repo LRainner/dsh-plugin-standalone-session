@@ -614,11 +614,7 @@ function BatchDeleteDialog({
   const [error, setError] = useState<string | null>(null)
   const busy = submitting || progress !== null
   const running = targets.filter((row) => row.running).length
-  const hidden = Math.max(0, targets.length - 5)
-  const percent =
-    progress === null || progress.total === 0
-      ? 0
-      : Math.round((progress.done / progress.total) * 100)
+  const hasBlank = targets.some((row) => row.blank)
   const confirm = async (): Promise<void> => {
     if (busy) return
     setSubmitting(true)
@@ -649,12 +645,13 @@ function BatchDeleteDialog({
             type="button"
             className="ss-button ss-buttonDanger"
             disabled={busy}
+            aria-busy={progress !== null}
             onClick={() => {
               void confirm()
             }}
           >
             {progress === null
-              ? t('panel.batchDeleteConfirm', { n: targets.length })
+              ? t('panel.batchDelete')
               : t('panel.batchDeleting', {
                   done: progress.done,
                   total: progress.total,
@@ -663,52 +660,13 @@ function BatchDeleteDialog({
         </>
       }
     >
-      <p className="ss-dialogBody">{t('panel.batchDeleteBody')}</p>
-      <ul className="ss-batchList" aria-label={t('panel.batchDeleteList')}>
-        {targets.slice(0, 5).map((row) => {
-          const title = row.title?.trim() || t('panel.untitled')
-          const state = row.running
-            ? t('panel.running')
-            : row.blank
-              ? t('panel.blank')
-              : relativeTimeLabel(t, row.updatedAt)
-          return (
-            <li className="ss-batchItem" key={row.id}>
-              <span className="ss-batchTitle" title={title}>
-                {title}
-              </span>
-              {state !== '' ? <span className="ss-batchState">{state}</span> : null}
-            </li>
-          )
-        })}
-      </ul>
-      {hidden > 0 ? (
-        <p className="ss-batchMore">{t('panel.batchDeleteMore', { n: hidden })}</p>
-      ) : null}
+      <p className="ss-dialogBody">
+        {t('panel.batchDeleteBody', { n: targets.length })}
+      </p>
       {running > 0 ? (
         <p className="ss-batchWarning">{t('panel.batchDeleteRunning', { n: running })}</p>
       ) : null}
-      <p className="ss-batchDirs">{t('panel.batchDeleteDirs')}</p>
-      {progress !== null ? (
-        <div className="ss-batchProgressWrap">
-          <div className="ss-batchProgressText">
-            {t('panel.batchDeleting', { done: progress.done, total: progress.total })}
-          </div>
-          <div
-            className="ss-batchProgress"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={progress.total}
-            aria-valuenow={progress.done}
-            aria-label={t('panel.batchDeleting', {
-              done: progress.done,
-              total: progress.total,
-            })}
-          >
-            <span style={{ width: `${percent}%` }} />
-          </div>
-        </div>
-      ) : null}
+      {hasBlank ? <p className="ss-batchDirs">{t('panel.batchDeleteDirs')}</p> : null}
       {error !== null ? <div className="ss-error">{error}</div> : null}
     </DialogFrame>
   )
@@ -746,6 +704,7 @@ export function createStandalonePanel(ctx: ClientContext) {
       setSelectionMode(false)
       setSelectedIds(new Set())
       setMenuTarget(null)
+      setError(null)
       selectButtonRef.current?.focus()
     }
 
@@ -808,16 +767,11 @@ export function createStandalonePanel(ctx: ClientContext) {
         if (event.key === 'Escape') {
           event.preventDefault()
           exitSelection()
-          return
-        }
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
-          event.preventDefault()
-          setSelectedIds(selectAllRows(rows))
         }
       }
       document.addEventListener('keydown', onKey)
       return () => document.removeEventListener('keydown', onKey)
-    }, [selectionMode, rows, batchTargets, renameTarget, deleteTarget, menuTarget])
+    }, [selectionMode, batchTargets, renameTarget, deleteTarget, menuTarget])
 
     const create = async (): Promise<void> => {
       if (locked) return
@@ -903,7 +857,6 @@ export function createStandalonePanel(ctx: ClientContext) {
         setSelectedIds(new Set(result.failed.map((failure) => failure.sessionId)))
         if (result.failed.length === 0) {
           setSelectionMode(false)
-          showNotice('info', t('panel.batchArchived', { n: result.archived.length }))
         } else {
           const message = t('panel.batchPartial', { n: result.failed.length })
           setError(message)
@@ -926,62 +879,75 @@ export function createStandalonePanel(ctx: ClientContext) {
     return (
       <section className="ss-panel" aria-label={t('panel.title')}>
         <div className="ss-shell">
-          <header className="ss-header">
-            <div>
+          <header
+            className={`ss-header${selectionMode ? ' ss-headerSelection' : ''}`}
+            role={selectionMode ? 'toolbar' : undefined}
+            aria-label={selectionMode ? t('panel.selectToolbar') : undefined}
+          >
+            <div className="ss-headerMain">
               <div className="ss-titleRow">
                 <h1 className="ss-title">{t('panel.title')}</h1>
-                <span className="ss-count ss-countInline">{count}</span>
+                <span className="ss-count ss-countInline">
+                  {selectionMode
+                    ? t('panel.selectedCount', { n: state.count, total: rows.length })
+                    : count}
+                </span>
               </div>
-              <p className="ss-description">{t('panel.description')}</p>
+              {!selectionMode ? (
+                <p className="ss-description">{t('panel.description')}</p>
+              ) : null}
             </div>
-            {rows.length > 0 ? (
-              <div className="ss-headerActions">
+            <div className="ss-headerActions">
+              {selectionMode ? (
+                <>
+                  <label className="ss-selectAll">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      className="ss-checkbox"
+                      checked={state.all}
+                      disabled={locked}
+                      aria-label={t('panel.selectAllLabel')}
+                      onChange={toggleAll}
+                    />
+                    <span>{t('panel.selectAll')}</span>
+                  </label>
+                  {state.count > 0 ? (
+                    <button
+                      type="button"
+                      className="ss-button ss-buttonDanger"
+                      disabled={locked}
+                      onClick={beginBatch}
+                    >
+                      {t('panel.batchDelete')}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="ss-selectButton"
+                    disabled={locked}
+                    onClick={exitSelection}
+                  >
+                    {t('panel.cancel')}
+                  </button>
+                </>
+              ) : rows.length > 0 ? (
                 <button
                   ref={selectButtonRef}
                   type="button"
                   className="ss-selectButton"
                   disabled={locked}
-                  onClick={selectionMode ? exitSelection : enterSelection}
+                  onClick={enterSelection}
                 >
-                  {selectionMode ? t('panel.exitSelection') : t('panel.select')}
+                  {t('panel.select')}
                 </button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </header>
 
           {error !== null ? (
             <div className="ss-error" role="alert">
               {error}
-            </div>
-          ) : null}
-
-          {selectionMode && rows.length > 0 ? (
-            <div className="ss-selectionBar" role="toolbar" aria-label={t('panel.selectToolbar')}>
-              <label className="ss-selectAll">
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  className="ss-checkbox"
-                  checked={state.all}
-                  disabled={locked}
-                  aria-label={t('panel.selectAllLabel')}
-                  onChange={toggleAll}
-                />
-                <span>{t('panel.selectAll')}</span>
-              </label>
-              <span className="ss-selectedCount" aria-live="polite">
-                {t('panel.selectedCount', { n: state.count })}
-              </span>
-              <button
-                type="button"
-                className="ss-button ss-buttonDanger"
-                disabled={locked || state.count === 0}
-                onClick={beginBatch}
-              >
-                {state.count > 0
-                  ? t('panel.batchDeleteCount', { n: state.count })
-                  : t('panel.batchDelete')}
-              </button>
             </div>
           ) : null}
 
@@ -1137,7 +1103,9 @@ export function createStandalonePanel(ctx: ClientContext) {
               })}
             </ul>
           )}
-          <p className="ss-panelHint">{t('panel.archivedHint')}</p>
+          {!selectionMode ? (
+            <p className="ss-panelHint">{t('panel.archivedHint')}</p>
+          ) : null}
         </div>
         {batchTargets !== null ? (
           <BatchDeleteDialog
