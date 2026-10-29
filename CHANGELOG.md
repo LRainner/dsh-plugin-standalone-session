@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.0...v0.2.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* eliminate layout shift in batch selection ([924a579](https://github.com/LRainner/dsh-plugin-standalone-session/commit/924a579242ce65d8885f81232fae39bc86124982))
+
 ## [0.2.0](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.1.1...v0.2.0) (2026-10-29)
 
 
