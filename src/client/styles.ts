@@ -125,7 +125,7 @@ export const CSS = `
   border: 0.5px solid transparent;
   cursor: pointer;
   color: var(--dsw-alias-label-primary, #1f2328);
-  background: var(--dsw-alias-button-elevated-fill, #f3f4f6);
+  background: var(--dsw-alias-button-tool-bar-fill, var(--dsw-alias-bg-layer-2));
   transition: background 120ms ease, border-color 120ms ease;
 }
 .ss-button:hover:not(:disabled) {
@@ -141,12 +141,12 @@ export const CSS = `
   opacity: 0.55;
 }
 .ss-buttonPrimary {
-  color: #fff;
-  background: var(--dsw-alias-state-business-primary, #2563eb);
-  border-color: var(--dsw-alias-state-business-primary, #2563eb);
+  color: var(--dsw-alias-label-primary-foreground, #fff);
+  background: var(--dsw-alias-button-primary-fill, var(--dsw-alias-state-business-primary));
+  border-color: var(--dsw-alias-button-primary-fill, var(--dsw-alias-state-business-primary));
 }
 .ss-buttonPrimary:hover:not(:disabled) {
-  background: var(--dsw-alias-state-business-primary, #2563eb);
+  background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-state-business-primary));
   filter: brightness(1.05);
 }
 .ss-buttonQuiet {
@@ -169,9 +169,9 @@ export const CSS = `
   line-height: 16px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--dsw-alias-label-primary-bluish, #1f4f8f);
-  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.12));
-  border: 0.5px solid var(--dsw-alias-interactive-bg-hover, rgba(59, 130, 246, 0.18));
+  color: var(--dsw-alias-state-business-primary, #1f4f8f);
+  background: var(--dsw-alias-button-ghost-active-fill, transparent);
+  border: 0.5px solid var(--dsw-alias-button-ghost-active-border, transparent);
 }
 .ss-selectAll {
   display: inline-flex;
@@ -214,7 +214,7 @@ export const CSS = `
   padding: 12px 14px;
   border-radius: var(--dsw-radius-lg, 14px);
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.2));
-  background: var(--dsw-alias-bg-elevated, rgba(255, 255, 255, 0.02));
+  background: var(--dsw-alias-bg-layer-1, transparent);
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 }
@@ -355,8 +355,8 @@ export const CSS = `
   gap: 2px;
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
   border-radius: var(--dsw-radius-md, 10px);
-  background: var(--dsw-alias-bg-elevated, #fff);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  background: var(--dsw-alias-bg-layer-2, #fff);
+  box-shadow: var(--dsw-elevation-prominent, 0 10px 28px rgba(0, 0, 0, 0.16));
 }
 .ss-rowMenu button {
   box-sizing: border-box;
@@ -441,7 +441,7 @@ export const CSS = `
   padding: 8px 10px;
   border-radius: var(--dsw-radius-sm, 8px);
   color: var(--dsw-alias-state-error-primary, #d1242f);
-  background: var(--dsw-alias-state-error-tertiary, rgba(209, 36, 47, 0.08));
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary, #d1242f) 10%, transparent);
   font-size: 12px;
   line-height: 18px;
 }
@@ -452,7 +452,7 @@ export const CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.28));
   padding: 24px;
 }
 .ss-dialog {
@@ -463,9 +463,9 @@ export const CSS = `
   box-sizing: border-box;
   border-radius: var(--dsw-radius-lg, 14px);
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
-  background: var(--dsw-alias-bg-elevated, #fff);
+  background: var(--dsw-alias-bg-layer-2, #fff);
   padding: 20px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--dsw-elevation-prominent, 0 18px 48px rgba(0, 0, 0, 0.22));
 }
 .ss-dialogTitle {
   margin: 0 0 6px;
@@ -569,7 +569,7 @@ export const CSS = `
   text-align: center;
   border: 0.5px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.22));
   border-radius: var(--dsw-radius-lg, 14px);
-  background: var(--dsw-alias-bg-elevated, rgba(255, 255, 255, 0.02));
+  background: var(--dsw-alias-bg-layer-1, transparent);
 }
 .ss-launcherSpinner {
   width: 22px;
@@ -615,8 +615,8 @@ export const CSS = `
   font-size: 10px;
   line-height: 1;
   font-weight: 700;
-  color: var(--dsw-alias-label-primary-bluish, #1f4f8f);
-  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.14));
+  color: var(--dsw-alias-state-business-primary, #1f4f8f);
+  background: var(--dsw-alias-button-ghost-active-fill, transparent);
   flex: none;
 }
 .ss-rowHover {
@@ -638,9 +638,9 @@ export const CSS = `
   padding: 9px 14px;
   border-radius: var(--dsw-radius-md, 10px);
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
-  background: var(--dsw-alias-bg-elevated, #fff);
-  color: var(--dsw-alias-label-primary, #1f2328);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  background: var(--dsw-alias-toast-bg, var(--dsw-alias-bg-layer-2));
+  color: var(--dsw-alias-toast-label, var(--dsw-alias-label-primary));
+  box-shadow: var(--dsw-elevation-prominent, 0 12px 32px rgba(0, 0, 0, 0.18));
   font-size: 13px;
   line-height: 19px;
   pointer-events: auto;
