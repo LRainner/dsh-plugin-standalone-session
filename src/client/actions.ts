@@ -91,6 +91,45 @@ export async function archiveStandalone(ctx: ClientContext, sessionId: string): 
   await ctx.workspaces.archiveSession(sessionId, { stopActivity: true })
 }
 
+/** One failed session in a batch archive operation. */
+export interface BatchArchiveFailure {
+  readonly sessionId: string
+  readonly message: string
+}
+
+/** Result of archiving a snapshot of selected sessions. */
+export interface BatchArchiveResult {
+  readonly archived: readonly string[]
+  readonly failed: readonly BatchArchiveFailure[]
+}
+
+/**
+ * Archive sessions one at a time. A failure is recorded and the remaining
+ * sessions continue, so one stale row cannot strand the rest of the batch.
+ * @param ctx - client root context.
+ * @param sessionIds - frozen snapshot of the selected session ids.
+ * @param onProgress - called after every attempt with 1-based progress.
+ * @returns successfully archived ids and per-session failures.
+ */
+export async function archiveStandalones(
+  ctx: ClientContext,
+  sessionIds: readonly string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<BatchArchiveResult> {
+  const archived: string[] = []
+  const failed: BatchArchiveFailure[] = []
+  for (const [index, sessionId] of sessionIds.entries()) {
+    try {
+      await archiveStandalone(ctx, sessionId)
+      archived.push(sessionId)
+    } catch (reason) {
+      failed.push({ sessionId, message: messageOf(reason) })
+    }
+    onProgress?.(index + 1, sessionIds.length)
+  }
+  return { archived, failed }
+}
+
 /** Human-readable error text. */
 export function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

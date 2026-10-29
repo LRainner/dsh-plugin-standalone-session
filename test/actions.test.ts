@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ClientContext, Translate } from '../src/client/dsh.js'
-import { openManagementPanel, startStandalone } from '../src/client/actions.js'
+import { archiveStandalones, openManagementPanel, startStandalone } from '../src/client/actions.js'
 import { PANEL_ID } from '../src/client/panels.js'
 
 const t: Translate = (key) => key
@@ -62,5 +62,71 @@ describe('explicit standalone creation', () => {
     expect(options?.cwd).toContain('/.dsh/dsh-standalone-sessions/')
     expect(options?.cwd.endsWith(sessionId)).toBe(true)
     expect(openSession).toHaveBeenCalledWith(sessionId)
+  })
+})
+
+
+describe('batch archive', () => {
+  it('archives sequentially and reports progress', async () => {
+    const order: string[] = []
+    const progress: Array<[number, number]> = []
+    const archiveSession = vi.fn(async (id: string) => {
+      order.push(id)
+    })
+    const ctx = context({
+      workspaces: {
+        list: {
+          getSnapshot: () => ({ items: [], archivedSessionIds: [] }),
+          subscribe: () => () => undefined,
+        },
+        archiveSession,
+      },
+    })
+    const result = await archiveStandalones(ctx, ['a', 'b', 'c'], (done, total) => {
+      progress.push([done, total])
+    })
+    expect(order).toEqual(['a', 'b', 'c'])
+    expect(progress).toEqual([[1, 3], [2, 3], [3, 3]])
+    expect(result).toEqual({ archived: ['a', 'b', 'c'], failed: [] })
+  })
+
+  it('keeps going after a failure and reports it', async () => {
+    const archiveSession = vi.fn(async (id: string) => {
+      if (id === 'b') throw new Error('stale session')
+    })
+    const ctx = context({
+      workspaces: {
+        list: {
+          getSnapshot: () => ({ items: [], archivedSessionIds: [] }),
+          subscribe: () => () => undefined,
+        },
+        archiveSession,
+      },
+    })
+    const result = await archiveStandalones(ctx, ['a', 'b', 'c'])
+    expect(result.archived).toEqual(['a', 'c'])
+    expect(result.failed).toEqual([{ sessionId: 'b', message: 'stale session' }])
+  })
+
+  it('does not throw when every archive fails', async () => {
+    const archiveSession = vi.fn(async () => {
+      throw new Error('no access')
+    })
+    const ctx = context({
+      workspaces: {
+        list: {
+          getSnapshot: () => ({ items: [], archivedSessionIds: [] }),
+          subscribe: () => () => undefined,
+        },
+        archiveSession,
+      },
+    })
+    await expect(archiveStandalones(ctx, ['a', 'b'])).resolves.toEqual({
+      archived: [],
+      failed: [
+        { sessionId: 'a', message: 'no access' },
+        { sessionId: 'b', message: 'no access' },
+      ],
+    })
   })
 })

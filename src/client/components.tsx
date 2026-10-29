@@ -19,6 +19,7 @@ import {
 import { isStandaloneCwd } from '../shared/standalone.js'
 import {
   archiveStandalone,
+  archiveStandalones,
   createStandaloneSessionId,
   messageOf,
   openManagementPanel,
@@ -40,7 +41,14 @@ import {
 } from './launcher.js'
 import { relativeTimeLabel } from './format.js'
 import { NS } from './locales.js'
-import { dismissNotice, getNoticeSnapshot, subscribeNotice } from './notice.js'
+import { dismissNotice, getNoticeSnapshot, showNotice, subscribeNotice } from './notice.js'
+import {
+  pruneSelection,
+  selectAllRows,
+  selectedRows,
+  selectionState,
+  toggleSelection,
+} from './selection.js'
 import type { ClientContext, SessionRow, Translate } from './dsh.js'
 
 interface LocalizedProps {
@@ -586,6 +594,127 @@ function DeleteDialog({
 }
 
 /**
+ * Confirmation for a frozen batch snapshot. The dialog only renders a short
+ * preview; the full selection was already chosen in the panel.
+ */
+function BatchDeleteDialog({
+  targets,
+  t,
+  progress,
+  onCancel,
+  onConfirm,
+}: {
+  readonly targets: readonly SessionRow[]
+  readonly t: Translate
+  readonly progress: { readonly done: number; readonly total: number } | null
+  readonly onCancel: () => void
+  readonly onConfirm: () => Promise<void>
+}): ReactElement {
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const busy = submitting || progress !== null
+  const running = targets.filter((row) => row.running).length
+  const hidden = Math.max(0, targets.length - 5)
+  const percent =
+    progress === null || progress.total === 0
+      ? 0
+      : Math.round((progress.done / progress.total) * 100)
+  const confirm = async (): Promise<void> => {
+    if (busy) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await onConfirm()
+    } catch (reason) {
+      setError(messageOf(reason))
+      setSubmitting(false)
+    }
+  }
+  return (
+    <DialogFrame
+      title={t('panel.batchDeleteTitle', { n: targets.length })}
+      busy={busy}
+      onCancel={onCancel}
+      footer={
+        <>
+          <button
+            type="button"
+            className="ss-button ss-buttonQuiet"
+            disabled={busy}
+            onClick={onCancel}
+          >
+            {t('panel.cancel')}
+          </button>
+          <button
+            type="button"
+            className="ss-button ss-buttonDanger"
+            disabled={busy}
+            onClick={() => {
+              void confirm()
+            }}
+          >
+            {progress === null
+              ? t('panel.batchDeleteConfirm', { n: targets.length })
+              : t('panel.batchDeleting', {
+                  done: progress.done,
+                  total: progress.total,
+                })}
+          </button>
+        </>
+      }
+    >
+      <p className="ss-dialogBody">{t('panel.batchDeleteBody')}</p>
+      <ul className="ss-batchList" aria-label={t('panel.batchDeleteList')}>
+        {targets.slice(0, 5).map((row) => {
+          const title = row.title?.trim() || t('panel.untitled')
+          const state = row.running
+            ? t('panel.running')
+            : row.blank
+              ? t('panel.blank')
+              : relativeTimeLabel(t, row.updatedAt)
+          return (
+            <li className="ss-batchItem" key={row.id}>
+              <span className="ss-batchTitle" title={title}>
+                {title}
+              </span>
+              {state !== '' ? <span className="ss-batchState">{state}</span> : null}
+            </li>
+          )
+        })}
+      </ul>
+      {hidden > 0 ? (
+        <p className="ss-batchMore">{t('panel.batchDeleteMore', { n: hidden })}</p>
+      ) : null}
+      {running > 0 ? (
+        <p className="ss-batchWarning">{t('panel.batchDeleteRunning', { n: running })}</p>
+      ) : null}
+      <p className="ss-batchDirs">{t('panel.batchDeleteDirs')}</p>
+      {progress !== null ? (
+        <div className="ss-batchProgressWrap">
+          <div className="ss-batchProgressText">
+            {t('panel.batchDeleting', { done: progress.done, total: progress.total })}
+          </div>
+          <div
+            className="ss-batchProgress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.done}
+            aria-label={t('panel.batchDeleting', {
+              done: progress.done,
+              total: progress.total,
+            })}
+          >
+            <span style={{ width: `${percent}%` }} />
+          </div>
+        </div>
+      ) : null}
+      {error !== null ? <div className="ss-error">{error}</div> : null}
+    </DialogFrame>
+  )
+}
+
+/**
  * Factory for the keyed `main` panel.
  * @param ctx - client root context.
  * @returns the panel component.
@@ -600,8 +729,32 @@ export function createStandalonePanel(ctx: ClientContext) {
     const [renameTarget, setRenameTarget] = useState<SessionRow | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<SessionRow | null>(null)
     const [menuTarget, setMenuTarget] = useState<string | null>(null)
+    const [selectionMode, setSelectionMode] = useState(false)
+    const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set())
+    const [batchTargets, setBatchTargets] = useState<readonly SessionRow[] | null>(null)
+    const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null)
     const menuRef = useRef<HTMLDivElement>(null)
     const menuButtonRef = useRef<HTMLButtonElement>(null)
+    const selectAllRef = useRef<HTMLInputElement>(null)
+    const selectButtonRef = useRef<HTMLButtonElement>(null)
+
+    const selected = useMemo(() => selectedRows(rows, selectedIds), [rows, selectedIds])
+    const state = useMemo(() => selectionState(rows, selectedIds), [rows, selectedIds])
+    const locked = busy !== null || batchProgress !== null
+
+    const exitSelection = (): void => {
+      setSelectionMode(false)
+      setSelectedIds(new Set())
+      setMenuTarget(null)
+      selectButtonRef.current?.focus()
+    }
+
+    const enterSelection = (): void => {
+      if (locked) return
+      setMenuTarget(null)
+      setSelectedIds(new Set())
+      setSelectionMode(true)
+    }
 
     useEffect(() => {
       if (menuTarget === null) return
@@ -624,8 +777,50 @@ export function createStandalonePanel(ctx: ClientContext) {
       }
     }, [menuTarget])
 
+    useEffect(() => {
+      const pruned = pruneSelection(rows, selectedIds)
+      if (pruned !== selectedIds) setSelectedIds(pruned)
+      if (rows.length === 0 && selectionMode) {
+        setSelectionMode(false)
+        setSelectedIds(new Set())
+      }
+    }, [rows, selectedIds, selectionMode])
+
+    useEffect(() => {
+      if (selectionMode) selectAllRef.current?.focus()
+    }, [selectionMode])
+
+    useEffect(() => {
+      if (selectAllRef.current !== null) selectAllRef.current.indeterminate = state.some
+    }, [state.some, selectionMode])
+
+    useEffect(() => {
+      if (!selectionMode) return
+      const onKey = (event: KeyboardEvent): void => {
+        if (
+          batchTargets !== null ||
+          renameTarget !== null ||
+          deleteTarget !== null ||
+          menuTarget !== null
+        ) {
+          return
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          exitSelection()
+          return
+        }
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
+          event.preventDefault()
+          setSelectedIds(selectAllRows(rows))
+        }
+      }
+      document.addEventListener('keydown', onKey)
+      return () => document.removeEventListener('keydown', onKey)
+    }, [selectionMode, rows, batchTargets, renameTarget, deleteTarget, menuTarget])
+
     const create = async (): Promise<void> => {
-      if (busy !== null) return
+      if (locked) return
       setBusy('new')
       setError(null)
       try {
@@ -638,13 +833,23 @@ export function createStandalonePanel(ctx: ClientContext) {
     }
 
     const open = (row: SessionRow): void => {
-      if (busy !== null) return
+      if (locked) return
       setMenuTarget(null)
       try {
         ctx.uiWorkspace.openSession(row.id)
       } catch (reason) {
         setError(t('panel.actionFailed', { message: messageOf(reason) }))
       }
+    }
+
+    const toggleRow = (sessionId: string): void => {
+      if (locked) return
+      setSelectedIds((current) => toggleSelection(current, sessionId))
+    }
+
+    const toggleAll = (): void => {
+      if (locked) return
+      setSelectedIds(state.all ? new Set() : selectAllRows(rows))
     }
 
     const rename = async (row: SessionRow, title: string): Promise<void> => {
@@ -677,6 +882,45 @@ export function createStandalonePanel(ctx: ClientContext) {
       }
     }
 
+    const beginBatch = (): void => {
+      if (locked || selected.length === 0) return
+      setMenuTarget(null)
+      setError(null)
+      setBatchProgress(null)
+      setBatchTargets([...selected])
+    }
+
+    const runBatch = async (targets: readonly SessionRow[]): Promise<void> => {
+      setBatchProgress({ done: 0, total: targets.length })
+      setError(null)
+      try {
+        const result = await archiveStandalones(
+          ctx,
+          targets.map((row) => row.id),
+          (done, total) => setBatchProgress({ done, total }),
+        )
+        setBatchTargets(null)
+        setSelectedIds(new Set(result.failed.map((failure) => failure.sessionId)))
+        if (result.failed.length === 0) {
+          setSelectionMode(false)
+          showNotice('info', t('panel.batchArchived', { n: result.archived.length }))
+        } else {
+          const message = t('panel.batchPartial', { n: result.failed.length })
+          setError(message)
+          showNotice('error', message)
+        }
+        openManagementPanel(ctx, t)
+      } catch (reason) {
+        setBatchTargets(null)
+        const message = t('panel.actionFailed', { message: messageOf(reason) })
+        setError(message)
+        showNotice('error', message)
+        openManagementPanel(ctx, t)
+      } finally {
+        setBatchProgress(null)
+      }
+    }
+
     const count = t('panel.count', { n: rows.length })
 
     return (
@@ -690,11 +934,54 @@ export function createStandalonePanel(ctx: ClientContext) {
               </div>
               <p className="ss-description">{t('panel.description')}</p>
             </div>
+            {rows.length > 0 ? (
+              <div className="ss-headerActions">
+                <button
+                  ref={selectButtonRef}
+                  type="button"
+                  className="ss-selectButton"
+                  disabled={locked}
+                  onClick={selectionMode ? exitSelection : enterSelection}
+                >
+                  {selectionMode ? t('panel.exitSelection') : t('panel.select')}
+                </button>
+              </div>
+            ) : null}
           </header>
 
           {error !== null ? (
             <div className="ss-error" role="alert">
               {error}
+            </div>
+          ) : null}
+
+          {selectionMode && rows.length > 0 ? (
+            <div className="ss-selectionBar" role="toolbar" aria-label={t('panel.selectToolbar')}>
+              <label className="ss-selectAll">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  className="ss-checkbox"
+                  checked={state.all}
+                  disabled={locked}
+                  aria-label={t('panel.selectAllLabel')}
+                  onChange={toggleAll}
+                />
+                <span>{t('panel.selectAll')}</span>
+              </label>
+              <span className="ss-selectedCount" aria-live="polite">
+                {t('panel.selectedCount', { n: state.count })}
+              </span>
+              <button
+                type="button"
+                className="ss-button ss-buttonDanger"
+                disabled={locked || state.count === 0}
+                onClick={beginBatch}
+              >
+                {state.count > 0
+                  ? t('panel.batchDeleteCount', { n: state.count })
+                  : t('panel.batchDelete')}
+              </button>
             </div>
           ) : null}
 
@@ -710,7 +997,7 @@ export function createStandalonePanel(ctx: ClientContext) {
                 <button
                   type="button"
                   className="ss-button ss-buttonPrimary"
-                  disabled={busy !== null}
+                  disabled={locked}
                   onClick={() => {
                     void create()
                   }}
@@ -726,6 +1013,7 @@ export function createStandalonePanel(ctx: ClientContext) {
                 const title = row.title?.trim() || t('panel.untitled')
                 const updated = relativeTimeLabel(t, row.updatedAt)
                 const openMenu = menuTarget === row.id
+                const checked = selectedIds.has(row.id)
                 const metaItems: ReactNode[] = []
                 if (updated !== '') metaItems.push(<span key="time">{updated}</span>)
                 if (row.running) {
@@ -745,24 +1033,37 @@ export function createStandalonePanel(ctx: ClientContext) {
                 }
                 return (
                   <li
-                    className={`ss-row${openMenu ? ' ss-rowMenuOpen' : ''}`}
+                    className={`ss-row${openMenu ? ' ss-rowMenuOpen' : ''}${
+                      selectionMode && checked ? ' ss-rowSelected' : ''
+                    }`}
                     key={row.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-disabled={busy !== null}
-                    onClick={() => open(row)}
-                    onKeyDown={(event) => {
-                      if (event.target !== event.currentTarget) return
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        open(row)
-                      } else if (event.key === 'ArrowDown') {
-                        event.preventDefault()
-                        setMenuTarget(row.id)
-                      }
-                    }}
                   >
-                    <div className="ss-rowMain">
+                    {selectionMode ? (
+                      <input
+                        type="checkbox"
+                        className="ss-checkbox"
+                        checked={checked}
+                        disabled={locked}
+                        aria-label={t('panel.selectRow', { title })}
+                        onChange={() => toggleRow(row.id)}
+                      />
+                    ) : null}
+                    <button
+                      type="button"
+                      className="ss-rowMain"
+                      disabled={locked}
+                      aria-pressed={selectionMode ? checked : undefined}
+                      onClick={() => {
+                        if (selectionMode) toggleRow(row.id)
+                        else open(row)
+                      }}
+                      onKeyDown={(event) => {
+                        if (!selectionMode && event.key === 'ArrowDown') {
+                          event.preventDefault()
+                          setMenuTarget(row.id)
+                        }
+                      }}
+                    >
                       <div className="ss-rowTitleRow">
                         <span className="ss-rowTitle" title={title}>
                           {title}
@@ -778,57 +1079,59 @@ export function createStandalonePanel(ctx: ClientContext) {
                           ))}
                         </div>
                       ) : null}
-                    </div>
-                    <div className="ss-rowActions">
-                      <button
-                        type="button"
-                        className="ss-rowMenuButton"
-                        aria-label={t('panel.more')}
-                        aria-haspopup="menu"
-                        aria-expanded={openMenu}
-                        disabled={busy !== null}
-                        ref={openMenu ? menuButtonRef : undefined}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setMenuTarget(openMenu ? null : row.id)
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        <span aria-hidden="true">⋯</span>
-                      </button>
-                      {openMenu ? (
-                        <div
-                          className="ss-rowMenu"
-                          role="menu"
-                          ref={menuRef}
-                          onClick={(event) => event.stopPropagation()}
+                    </button>
+                    {!selectionMode ? (
+                      <div className="ss-rowActions">
+                        <button
+                          type="button"
+                          className="ss-rowMenuButton"
+                          aria-label={t('panel.more')}
+                          aria-haspopup="menu"
+                          aria-expanded={openMenu}
+                          disabled={locked}
+                          ref={openMenu ? menuButtonRef : undefined}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setMenuTarget(openMenu ? null : row.id)
+                          }}
+                          onKeyDown={(event) => event.stopPropagation()}
                         >
-                          <button
-                            type="button"
-                            role="menuitem"
-                            disabled={busy !== null}
-                            onClick={() => {
-                              setMenuTarget(null)
-                              setRenameTarget(row)
-                            }}
+                          <span aria-hidden="true">⋯</span>
+                        </button>
+                        {openMenu ? (
+                          <div
+                            className="ss-rowMenu"
+                            role="menu"
+                            ref={menuRef}
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            {t('panel.rename')}
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="ss-rowMenuDanger"
-                            disabled={busy !== null}
-                            onClick={() => {
-                              setMenuTarget(null)
-                              setDeleteTarget(row)
-                            }}
-                          >
-                            {t('panel.delete')}
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={locked}
+                              onClick={() => {
+                                setMenuTarget(null)
+                                setRenameTarget(row)
+                              }}
+                            >
+                              {t('panel.rename')}
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="ss-rowMenuDanger"
+                              disabled={locked}
+                              onClick={() => {
+                                setMenuTarget(null)
+                                setDeleteTarget(row)
+                              }}
+                            >
+                              {t('panel.delete')}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </li>
                 )
               })}
@@ -836,6 +1139,17 @@ export function createStandalonePanel(ctx: ClientContext) {
           )}
           <p className="ss-panelHint">{t('panel.archivedHint')}</p>
         </div>
+        {batchTargets !== null ? (
+          <BatchDeleteDialog
+            targets={batchTargets}
+            t={t}
+            progress={batchProgress}
+            onCancel={() => {
+              if (batchProgress === null) setBatchTargets(null)
+            }}
+            onConfirm={() => runBatch(batchTargets)}
+          />
+        ) : null}
         {renameTarget !== null ? (
           <RenameDialog
             row={renameTarget}
