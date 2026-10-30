@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-standalone-session",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "displayName": "Standalone Session",
   "description": "Create and manage standalone DSH sessions that are not attached to any workspace.",
   "type": "module",

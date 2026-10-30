@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.2...v0.2.3) (2026-10-30)
+
+
+### Bug Fixes
+
+* create standalone session working directories ([5734845](https://github.com/LRainner/dsh-plugin-standalone-session/commit/5734845d50d51c7834bbd93470818d33bae32d2e))
+
 ## [0.2.2](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.1...v0.2.2) (2026-10-29)
 
 
