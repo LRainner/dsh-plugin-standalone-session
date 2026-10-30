@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.3...v0.2.4) (2026-10-30)
+
+
+### Bug Fixes
+
+* keep live working directories out of cleanup ([a9b0cfc](https://github.com/LRainner/dsh-plugin-standalone-session/commit/a9b0cfc901254b52ca3b2f55166acfd44f3d3670))
+
 ## [0.2.3](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.2...v0.2.3) (2026-10-30)
 
 
