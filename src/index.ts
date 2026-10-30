@@ -13,10 +13,12 @@
  * native composer for these sessions, so the host never needs a synthetic
  * workspace and the user's workspace list stays untouched.
  */
+import { mkdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import {
   STANDALONE_DIR_NAME,
+  assertSessionId,
   isStandaloneCwd,
 } from './shared/standalone.js'
 import {
@@ -173,7 +175,9 @@ export function apply(ctx: StandaloneHostContext): void {
       } else {
         logger.warn('workspace registry is unavailable; archive cleanup is deferred')
       }
-      await registry.sweepOrphanDirectories(collectLiveSessionIds(ctx))
+      const liveSessionIds = collectLiveSessionIds(ctx)
+      await registry.ensureDirectories(liveSessionIds)
+      await registry.sweepOrphanDirectories(liveSessionIds)
     } catch (error) {
       logger.warn(`cleanup sweep failed: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
@@ -190,9 +194,28 @@ export function apply(ctx: StandaloneHostContext): void {
     const cwd = summary?.cwd
     if (typeof sessionId !== 'string' || typeof cwd !== 'string') return
     if (!isStandaloneCwd(cwd)) return
+    let ownedId: string
+    try {
+      ownedId = assertSessionId(sessionId)
+    } catch {
+      return
+    }
+    if (resolve(cwd) !== resolve(join(root, ownedId))) {
+      logger.warn(`ignored standalone cwd outside the plugin root: ${cwd}`)
+      return
+    }
     logger.info(`observed standalone session ${sessionId}`)
     void ready
-      .then(() => registry.announce({ sessionId, cwd, blank: summary.blank }))
+      .then(async () => {
+        try {
+          await mkdir(cwd, { recursive: true })
+        } catch (error) {
+          logger.warn(
+            `could not create ${cwd}: ${error instanceof Error ? error.message : String(error)}`,
+          )
+        }
+        await registry.announce({ sessionId, cwd, blank: summary.blank })
+      })
       .catch((error: unknown) => {
         logger.warn(
           `could not record ${sessionId}: ${error instanceof Error ? error.message : String(error)}`,

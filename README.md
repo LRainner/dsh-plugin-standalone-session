@@ -16,7 +16,7 @@ DeepSeek Harness 的独立会话：**不隶属于任何工作区**，但完整�
 - 上一次由该入口创建的空白会话会复用，避免连点产生大量空会话；管理面板空状态可强制新建。
 - 侧边栏底部 **管理独立会话**：点击行打开，`⋯` 菜单重命名/删除，支持多选批量删除。
 - 原生输入区可用：模型选择、附件、`/` 指令、发送。
-- 重启 DSH 后仍保持独立状态。
+- 重启 DSH 后仍保持独立状态；创建时自动建立会话工作目录，并修复启动时缺失的目录。
 - 不替换原生新建会话、工作区浏览器、会话菜单或聊天 UI。
 
 ## 安装
@@ -102,7 +102,7 @@ dsh plugin --profile web add /absolute/path/to/dsh-plugin-standalone-session-0.1
 
 ```bash
 npm ci
-npm run check       # typecheck + build + 59 个单元测试
+npm run check       # typecheck + build + 61 个单元测试
 npm test
 ```
 

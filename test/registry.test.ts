@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -258,6 +258,29 @@ describe('orphan sweep', () => {
     await utimes(orphan, old, old)
     expect(await registry.sweepOrphanDirectories(new Set(), 0)).toEqual([])
     expect(await readdir(orphan)).toEqual(['keep.txt'])
+  })
+})
+
+describe('directory repair', () => {
+  it('recreates a missing directory for a live record', async () => {
+    const registry = new DurableStandaloneRegistry(root, captureLogger())
+    await registry.load()
+    const entry = record('session-1')
+    await registry.announce(entry)
+    await expect(stat(entry.cwd)).rejects.toMatchObject({ code: 'ENOENT' })
+
+    expect(await registry.ensureDirectories(new Set(['session-1']))).toEqual(['session-1'])
+    expect((await stat(entry.cwd)).isDirectory()).toBe(true)
+  })
+
+  it('does not recreate a directory for a record the Host no longer holds', async () => {
+    const registry = new DurableStandaloneRegistry(root, captureLogger())
+    await registry.load()
+    const entry = record('session-1')
+    await registry.announce(entry)
+
+    expect(await registry.ensureDirectories(new Set())).toEqual([])
+    await expect(stat(entry.cwd)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 })
 

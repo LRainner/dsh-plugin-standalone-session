@@ -319,6 +319,40 @@ export class DurableStandaloneRegistry {
   }
 
   /**
+   * Recreate directories for live standalone records when they are missing.
+   * Session creation accepts a cwd without creating it, so a blank session can
+   * otherwise reach its first run with no working directory. Archived records
+   * are deliberately skipped; their directory may have been cleaned already.
+   * @param liveSessionIds - identities the Host currently holds, or undefined
+   *   to repair every unarchived registry record.
+   * @returns identities whose directory was created.
+   */
+  async ensureDirectories(liveSessionIds?: ReadonlySet<string>): Promise<string[]> {
+    const created: string[] = []
+    for (const entry of this.list()) {
+      if (entry.archived === true) continue
+      if (liveSessionIds !== undefined && !liveSessionIds.has(entry.sessionId)) continue
+      if (!isPathInside(this.rootDir, entry.cwd)) continue
+      if (!isOwnedSessionDirectory(entry)) continue
+      try {
+        const existing = await stat(entry.cwd).catch((error: unknown) => {
+          if (errorCode(error) === 'ENOENT') return undefined
+          throw error
+        })
+        if (existing !== undefined) continue
+        await mkdir(entry.cwd, { recursive: true })
+        created.push(entry.sessionId)
+        this.logger.info(`recreated missing standalone session directory: ${entry.cwd}`)
+      } catch (error) {
+        this.logger.warn(
+          `could not ensure session directory ${entry.cwd}: ${errorMessage(error)}`,
+        )
+      }
+    }
+    return created
+  }
+
+  /**
    * Remove old empty session directories that neither the registry nor the
    * live session store references. These are the residue of a failed create or
    * a crash between mkdir and the session announcement.
