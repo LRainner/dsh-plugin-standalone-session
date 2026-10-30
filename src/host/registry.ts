@@ -58,6 +58,26 @@ const defaultDirectoryOps: DirectoryOps = {
   rm: (path, options) => rm(path, options),
 }
 
+/** Hidden marker kept inside every session directory so empty-dir sweeps leave it alone. */
+export const STANDALONE_KEEP_FILE = '.dsh-standalone-session'
+
+/**
+ * Create the hidden ownership marker once. The marker makes the directory
+ * non-empty, so the orphan sweep cannot mistake a live-but-empty session
+ * workspace for abandoned cache residue.
+ * @param directory - own session directory.
+ */
+export async function ensureStandaloneKeepFile(directory: string): Promise<void> {
+  try {
+    await writeFile(join(directory, STANDALONE_KEEP_FILE), 'standalone session\n', {
+      encoding: 'utf8',
+      flag: 'wx',
+    })
+  } catch (error) {
+    if (errorCode(error) !== 'EEXIST') throw error
+  }
+}
+
 /** Error code reader that works for plain `Error` and Node's `ErrnoException`. */
 function errorCode(error: unknown): string | undefined {
   if (typeof error !== 'object' || error === null) return undefined
@@ -296,6 +316,7 @@ export class DurableStandaloneRegistry {
   async reconcileArchived(
     archivedSessionIds: ReadonlySet<string>,
     stillArchived?: (sessionId: string) => boolean,
+    liveSessionIds?: ReadonlySet<string>,
   ): Promise<ReadonlyMap<string, CleanupOutcome>> {
     const outcomes = new Map<string, CleanupOutcome>()
     if (archivedSessionIds.size === 0) return outcomes
@@ -304,6 +325,8 @@ export class DurableStandaloneRegistry {
       // An unarchive can land between the snapshot and the unlink; never
       // destroy a directory that the Host no longer reports as archived.
       if (stillArchived !== undefined && !stillArchived(entry.sessionId)) continue
+      // A stale archive snapshot must never remove the cwd of a live session.
+      if (liveSessionIds?.has(entry.sessionId) === true) continue
       await this.mutate((data) => markArchived(data, entry.sessionId))
       const outcome = await cleanupSessionDirectory(entry, this.ops, this.logger)
       outcomes.set(entry.sessionId, outcome)
@@ -339,8 +362,12 @@ export class DurableStandaloneRegistry {
           if (errorCode(error) === 'ENOENT') return undefined
           throw error
         })
-        if (existing !== undefined) continue
+        if (existing !== undefined) {
+          await ensureStandaloneKeepFile(entry.cwd)
+          continue
+        }
         await mkdir(entry.cwd, { recursive: true })
+        await ensureStandaloneKeepFile(entry.cwd)
         created.push(entry.sessionId)
         this.logger.info(`recreated missing standalone session directory: ${entry.cwd}`)
       } catch (error) {

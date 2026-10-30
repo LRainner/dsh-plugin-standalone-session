@@ -8,6 +8,7 @@ import {
   isOwnedSessionDirectory,
   isPathInside,
   prefixedLogger,
+  STANDALONE_KEEP_FILE,
   type DirectoryOps,
   type RegistryLogger,
 } from '../src/host/registry.js'
@@ -210,6 +211,22 @@ describe('archive reconciliation', () => {
     expect(await readdir(dir)).toEqual([])
   })
 
+  it('does not clean a directory while its session is live', async () => {
+    const registry = new DurableStandaloneRegistry(root, captureLogger())
+    await registry.load()
+    const entry = record('session-1')
+    await registry.announce(entry)
+    await mkdir(entry.cwd, { recursive: true })
+    const outcomes = await registry.reconcileArchived(
+      new Set(['session-1']),
+      () => true,
+      new Set(['session-1']),
+    )
+    expect(outcomes.size).toBe(0)
+    expect(registry.get('session-1')).toBeDefined()
+    expect((await stat(entry.cwd)).isDirectory()).toBe(true)
+  })
+
   it('does nothing when the archive set is empty', async () => {
     const registry = new DurableStandaloneRegistry(root, captureLogger())
     await registry.load()
@@ -248,6 +265,18 @@ describe('orphan sweep', () => {
     expect(await readdir(fresh)).toEqual([])
   })
 
+  it('leaves a marked empty session directory alone', async () => {
+    const registry = new DurableStandaloneRegistry(root, captureLogger())
+    await registry.load()
+    const marked = join(root, 'session-marked')
+    await mkdir(marked, { recursive: true })
+    await writeFile(join(marked, STANDALONE_KEEP_FILE), '', 'utf8')
+    const old = new Date(Date.now() - 3_600_000)
+    await utimes(marked, old, old)
+    expect(await registry.sweepOrphanDirectories(new Set(), 0)).toEqual([])
+    expect(await readdir(marked)).toEqual([STANDALONE_KEEP_FILE])
+  })
+
   it('never removes a non-empty orphan directory', async () => {
     const registry = new DurableStandaloneRegistry(root, captureLogger())
     await registry.load()
@@ -271,6 +300,7 @@ describe('directory repair', () => {
 
     expect(await registry.ensureDirectories(new Set(['session-1']))).toEqual(['session-1'])
     expect((await stat(entry.cwd)).isDirectory()).toBe(true)
+    expect(await readdir(entry.cwd)).toContain(STANDALONE_KEEP_FILE)
   })
 
   it('does not recreate a directory for a record the Host no longer holds', async () => {

@@ -23,6 +23,7 @@ import {
 } from './shared/standalone.js'
 import {
   DurableStandaloneRegistry,
+  ensureStandaloneKeepFile,
   prefixedLogger,
   type RegistryLogger,
 } from './host/registry.js'
@@ -162,10 +163,13 @@ export function apply(ctx: StandaloneHostContext): void {
     if (disposed || sweeping) return
     sweeping = true
     try {
+      const liveSessionIds = collectLiveSessionIds(ctx)
       const workspaceRegistry = resolveWorkspaceRegistry(ctx)
       if (workspaceRegistry !== undefined) {
-        const outcomes = await registry.reconcileArchived(readArchivedIds(workspaceRegistry), (sessionId) =>
-          readArchivedIds(workspaceRegistry).has(sessionId),
+        const outcomes = await registry.reconcileArchived(
+          readArchivedIds(workspaceRegistry),
+          (sessionId) => readArchivedIds(workspaceRegistry).has(sessionId),
+          liveSessionIds,
         )
         for (const [sessionId, outcome] of outcomes) {
           if (outcome.kind === 'failed') {
@@ -175,7 +179,6 @@ export function apply(ctx: StandaloneHostContext): void {
       } else {
         logger.warn('workspace registry is unavailable; archive cleanup is deferred')
       }
-      const liveSessionIds = collectLiveSessionIds(ctx)
       await registry.ensureDirectories(liveSessionIds)
       await registry.sweepOrphanDirectories(liveSessionIds)
     } catch (error) {
@@ -209,6 +212,7 @@ export function apply(ctx: StandaloneHostContext): void {
       .then(async () => {
         try {
           await mkdir(cwd, { recursive: true })
+          await ensureStandaloneKeepFile(cwd)
         } catch (error) {
           logger.warn(
             `could not create ${cwd}: ${error instanceof Error ? error.message : String(error)}`,
