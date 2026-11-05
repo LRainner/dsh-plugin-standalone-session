@@ -64,52 +64,6 @@ export const CSS = `
   margin-top: 0;
   align-self: center;
 }
-.ss-headerActions {
-  display: flex;
-  flex: 0 0 176px;
-  width: 176px;
-  height: 32px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
-  gap: 8px;
-}
-.ss-deleteSlot {
-  width: 56px;
-  height: 32px;
-  flex: none;
-  display: flex;
-  justify-content: flex-end;
-}
-.ss-deleteSlot .ss-button {
-  min-width: 52px;
-  flex: none;
-}
-.ss-selectButton {
-  min-height: 32px;
-  padding: 3px 8px;
-  border: 0;
-  border-radius: var(--dsw-radius-md, 10px);
-  background: transparent;
-  color: var(--dsw-alias-label-secondary, #59636e);
-  font: inherit;
-  font-size: 13px;
-  line-height: 20px;
-  cursor: pointer;
-}
-.ss-selectButton:hover:not(:disabled) {
-  color: var(--dsw-alias-label-primary, #1f2328);
-  background: var(--dsw-alias-interactive-bg-hover, #e9ebee);
-}
-.ss-selectButton:focus-visible {
-  outline: var(--dsw-focus-ring-width, 2px) solid
-    var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary, #3b82f6));
-  outline-offset: 1px;
-}
-.ss-selectButton:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
 .ss-button {
   font: inherit;
   display: inline-flex;
@@ -182,18 +136,6 @@ export const CSS = `
   line-height: 20px;
   cursor: pointer;
   user-select: none;
-}
-.ss-checkbox {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  flex: none;
-  accent-color: var(--dsw-alias-state-business-primary, #2563eb);
-  cursor: pointer;
-}
-.ss-checkbox:disabled {
-  cursor: default;
-  opacity: 0.55;
 }
 .ss-list {
   display: flex;
@@ -665,7 +607,6 @@ export const CSS = `
 @media (max-width: 640px) {
   .ss-panel { padding: 20px 14px 40px; }
   .ss-row { flex-wrap: nowrap; gap: 10px; }
-  .ss-headerActions { flex-basis: 176px; width: 176px; }
 }
 /* Manager refresh: quiet native list, single content axis, theme-token surfaces. */
 .ss-panel {
@@ -849,6 +790,7 @@ export const CSS = `
   line-height: 18px;
 }
 .ss-panel .ss-batchToolbar {
+  padding-left: 4px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -900,6 +842,8 @@ export const CSS = `
   list-style: none;
 }
 .ss-panel .ss-row {
+  position: relative;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) 32px;
   column-gap: 12px;
@@ -924,7 +868,8 @@ export const CSS = `
 .ss-panel .ss-rowSelected,
 .ss-panel .ss-rowSelected:hover,
 .ss-panel .ss-rowSelected:focus-within {
-  background: var(--ss-selected);
+  background: var(--dsw-alias-interactive-bg-active, var(--ss-hover));
+  border-color: transparent;
 }
 .ss-panel .ss-rowLead {
   width: 18px;
@@ -938,8 +883,9 @@ export const CSS = `
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
+  margin: -7px;
   flex: none;
   cursor: pointer;
 }
@@ -955,8 +901,8 @@ export const CSS = `
 }
 .ss-panel .ss-checkBox {
   box-sizing: border-box;
-  display: grid;
-  place-items: center;
+  position: relative;
+  display: block;
   width: 14px;
   height: 14px;
   color: var(--dsw-alias-label-primary-foreground, #fff);
@@ -966,7 +912,11 @@ export const CSS = `
   transition: background-color 120ms ease, border-color 120ms ease;
 }
 .ss-panel .ss-checkBox svg {
-  display: block;
+  position: absolute;
+  inset: 0;
+  width: 10px;
+  height: 10px;
+  margin: auto;
   visibility: hidden;
 }
 .ss-panel .ss-check:hover .ss-checkBox {
@@ -986,8 +936,11 @@ export const CSS = `
 }
 .ss-panel .ss-checkInput:indeterminate + .ss-checkBox::after {
   content: '';
+  position: absolute;
+  inset: 0;
   width: 7px;
   height: 1.5px;
+  margin: auto;
   border-radius: 1px;
   background: currentColor;
 }
@@ -1002,8 +955,9 @@ export const CSS = `
   opacity: 0.5;
 }
 .ss-panel .ss-rowLead .ss-check {
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 32px;
+  margin: -7px;
 }
 .ss-panel .ss-rowMain {
   display: flex;
@@ -1283,6 +1237,12 @@ export const CSS = `
   }
   .ss-panel .ss-search input {
     font-size: 16px;
+  }
+  .ss-panel .ss-check,
+  .ss-panel .ss-rowLead .ss-check {
+    width: 44px;
+    height: 44px;
+    margin: -13px;
   }
 }
 `
