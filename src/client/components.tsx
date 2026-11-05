@@ -1021,15 +1021,28 @@ export function createStandalonePanel(ctx: ClientContext) {
           {selectionMode ? (
             <div className="ss-batchToolbar">
               <label className="ss-selectAll">
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  className="ss-checkbox"
-                  checked={state.all}
-                  disabled={locked || filteredRows.length === 0}
-                  aria-label={t('panel.selectAllLabel')}
-                  onChange={toggleAll}
-                />
+                <span className="ss-check">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    className="ss-checkInput"
+                    checked={state.all}
+                    disabled={locked || filteredRows.length === 0}
+                    aria-label={t('panel.selectAllLabel')}
+                    onChange={toggleAll}
+                  />
+                  <span className="ss-checkBox" aria-hidden="true">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                      <path
+                        d="m2.5 6.2 2.3 2.3 4.7-5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                </span>
                 <span>{t('panel.selectAllResults')}</span>
               </label>
               <span className="ss-batchCount">{t('panel.selectedItems', { n: state.count })}</span>
@@ -1122,14 +1135,27 @@ export function createStandalonePanel(ctx: ClientContext) {
                       >
                         <span className="ss-rowLead">
                           {selectionMode ? (
-                            <input
-                              type="checkbox"
-                              className="ss-checkbox"
-                              checked={checked}
-                              disabled={locked}
-                              aria-label={t('panel.selectRow', { title })}
-                              onChange={() => toggleRow(row.id)}
-                            />
+                            <label className="ss-check">
+                              <input
+                                type="checkbox"
+                                className="ss-checkInput"
+                                checked={checked}
+                                disabled={locked}
+                                aria-label={t('panel.selectRow', { title })}
+                                onChange={() => toggleRow(row.id)}
+                              />
+                              <span className="ss-checkBox" aria-hidden="true">
+                                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                                  <path
+                                    d="m2.5 6.2 2.3 2.3 4.7-5"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </span>
+                            </label>
                           ) : (
                             <StandaloneIcon size={16} />
                           )}

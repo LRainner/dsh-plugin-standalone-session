@@ -934,11 +934,76 @@ export const CSS = `
   justify-content: center;
   color: var(--ss-secondary);
 }
-.ss-panel .ss-checkbox {
+.ss-panel .ss-check {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  cursor: pointer;
+}
+.ss-panel .ss-checkInput {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ss-panel .ss-checkBox {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--dsw-alias-label-primary-foreground, #fff);
+  background: transparent;
+  border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
+  border-radius: var(--dsw-radius-xs, 4px);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.ss-panel .ss-checkBox svg {
+  display: block;
+  visibility: hidden;
+}
+.ss-panel .ss-check:hover .ss-checkBox {
+  border-color: var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.45));
+}
+.ss-panel .ss-checkInput:checked + .ss-checkBox,
+.ss-panel .ss-checkInput:indeterminate + .ss-checkBox {
+  color: var(--dsw-alias-label-primary-foreground, #fff);
+  background: var(--dsw-alias-label-primary, #20242c);
+  border-color: var(--dsw-alias-label-primary, #20242c);
+}
+.ss-panel .ss-checkInput:checked + .ss-checkBox svg {
+  visibility: visible;
+}
+.ss-panel .ss-checkInput:indeterminate + .ss-checkBox svg {
+  visibility: hidden;
+}
+.ss-panel .ss-checkInput:indeterminate + .ss-checkBox::after {
+  content: '';
+  width: 7px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.ss-panel .ss-checkInput:focus-visible + .ss-checkBox {
+  outline: 2px solid var(--ss-focus);
+  outline-offset: 2px;
+}
+.ss-panel .ss-checkInput:disabled {
+  cursor: default;
+}
+.ss-panel .ss-checkInput:disabled + .ss-checkBox {
+  opacity: 0.5;
+}
+.ss-panel .ss-rowLead .ss-check {
   width: 18px;
   height: 18px;
-  margin: 0;
-  accent-color: var(--ss-business);
 }
 .ss-panel .ss-rowMain {
   display: flex;
