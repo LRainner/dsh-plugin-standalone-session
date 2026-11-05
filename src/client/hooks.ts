@@ -48,9 +48,9 @@ export function useSessionCwd(ctx: ClientContext, sessionId: string | undefined)
 }
 
 /**
- * Standalone rows in display order: blank sessions first, then newest activity.
- * Archived rows are excluded; the native archived view remains the restore
- * surface.
+ * Standalone rows in display order: newest activity first, independent of
+ * blankness. Invalid timestamps sort last, with a stable id tie-break. Archived
+ * rows are excluded; the native archived view remains the restore surface.
  * @param sessions - catalog snapshot.
  * @param archivedSessionIds - Host archive set.
  * @returns the standalone rows.
@@ -70,8 +70,12 @@ export function standaloneRows(
     rows.push(row)
   }
   rows.sort((left, right) => {
-    if (left.blank !== right.blank) return left.blank ? -1 : 1
-    if (right.updatedAt !== left.updatedAt) return right.updatedAt - left.updatedAt
+    const leftValid = Number.isFinite(left.updatedAt) && left.updatedAt > 0
+    const rightValid = Number.isFinite(right.updatedAt) && right.updatedAt > 0
+    if (leftValid !== rightValid) return leftValid ? -1 : 1
+    if (leftValid && rightValid && right.updatedAt !== left.updatedAt) {
+      return right.updatedAt - left.updatedAt
+    }
     return left.id.localeCompare(right.id)
   })
   return rows

@@ -9,6 +9,36 @@ export type StandaloneKey =
   | 'panel.title'
   | 'panel.description'
   | 'panel.new'
+  | 'panel.searchPlaceholder'
+  | 'panel.searchLabel'
+  | 'panel.clearSearch'
+  | 'panel.batchManage'
+  | 'panel.done'
+  | 'panel.selectAllResults'
+  | 'panel.selectedItems'
+  | 'panel.archiveSelected'
+  | 'panel.archive'
+  | 'panel.archiveTitle'
+  | 'panel.archiveBody'
+  | 'panel.archiveRunningTitle'
+  | 'panel.archiveRunningBody'
+  | 'panel.archiveConfirm'
+  | 'panel.stopAndArchive'
+  | 'panel.batchArchiveTitle'
+  | 'panel.batchArchiveBody'
+  | 'panel.batchArchiveRunning'
+  | 'panel.batchArchiveConfirm'
+  | 'panel.batchStopArchive'
+  | 'panel.archiveDirs'
+  | 'panel.noSearchResults'
+  | 'panel.noSearchHint'
+  | 'panel.searchResults'
+  | 'panel.groupToday'
+  | 'panel.groupYesterday'
+  | 'panel.groupEarlier'
+  | 'panel.groupUnknown'
+  | 'panel.moreFor'
+  | 'panel.creating'
   | 'panel.empty'
   | 'panel.emptyHint'
   | 'panel.badge'
@@ -61,6 +91,7 @@ export type StandaloneKey =
   | 'footer.manage'
   | 'footer.manageCount'
   | 'footer.manageTooltip'
+  | 'time.yesterday'
   | 'time.now'
   | 'time.minutes'
   | 'time.hours'
@@ -85,10 +116,10 @@ export type StandaloneDict = Readonly<Record<StandaloneKey, string>>
 export const zh: StandaloneDict = {
   'panel.label': '独立会话',
   'panel.title': '独立会话',
-  'panel.description': '不隶属于任何工作区，使用 DSH 原生输入区。',
-  'panel.new': '新建独立会话',
+  'panel.description': '无需选择工作区，直接开始对话。',
+  'panel.new': '新建会话',
   'panel.empty': '还没有独立会话',
-  'panel.emptyHint': '点击下方按钮，创建一个空白会话开始。',
+  'panel.emptyHint': '点击“新建会话”开始。',
   'panel.badge': '独立',
   'panel.open': '打开',
   'panel.rename': '重命名',
@@ -102,14 +133,14 @@ export const zh: StandaloneDict = {
   'panel.deleteBody':
     '会话将从列表和原生会话视图中移除（DSH 以归档实现删除），但仍可在归档视图中恢复。空白会话的临时目录会被清理；已经产生过消息的会话会保留其目录。',
   'panel.deleteConfirm': '删除',
-  'panel.select': '选择',
+  'panel.select': '批量管理',
   'panel.selectToolbar': '批量选择',
-  'panel.selectAll': '全选',
+  'panel.selectAll': '全选结果',
   'panel.selectAllLabel': '全选独立会话',
   'panel.selectionHint': '点击会话行选择，或使用全选。',
-  'panel.selectedCount': '已选 {n} / {total}',
+  'panel.selectedCount': '已选 {n} 项',
   'panel.selectRow': '选择“{title}”',
-  'panel.batchDelete': '删除',
+  'panel.batchDelete': '归档所选',
   'panel.batchDeleteTitle': '删除 {n} 个独立会话？',
   'panel.batchDeleteBody': '将归档这 {n} 个会话，可在归档视图中恢复。',
   'panel.batchDeleteRunning': '其中 {n} 个正在运行，归档会停止它们。',
@@ -119,6 +150,36 @@ export const zh: StandaloneDict = {
   'panel.batchPartial': '{n} 个会话归档失败，已保留选中状态。',
   'panel.deleteKeepDir': '该会话已有消息，目录会被保留。',
   'panel.cancel': '取消',
+  'panel.searchPlaceholder': '搜索会话标题',
+  'panel.searchLabel': '搜索会话标题',
+  'panel.clearSearch': '清除搜索',
+  'panel.batchManage': '批量管理',
+  'panel.done': '完成',
+  'panel.selectAllResults': '全选结果',
+  'panel.selectedItems': '已选 {n} 项',
+  'panel.archiveSelected': '归档所选',
+  'panel.archive': '归档',
+  'panel.archiveTitle': '归档此会话？',
+  'panel.archiveBody': '归档后将从列表移除，可在 DSH 归档视图恢复。',
+  'panel.archiveRunningTitle': '停止并归档此会话？',
+  'panel.archiveRunningBody': '此会话正在运行。归档会停止当前任务，可在 DSH 归档视图恢复会话。',
+  'panel.archiveConfirm': '归档',
+  'panel.stopAndArchive': '停止并归档',
+  'panel.batchArchiveTitle': '归档 {n} 个会话？',
+  'panel.batchArchiveBody': '所选会话将从列表移除，可在 DSH 归档视图恢复。',
+  'panel.batchArchiveRunning': '其中 {n} 个正在运行，继续将停止这些任务。会话可在 DSH 归档视图恢复。',
+  'panel.batchArchiveConfirm': '归档 {n} 个会话',
+  'panel.batchStopArchive': '停止并归档',
+  'panel.archiveDirs': '未使用且无用户文件的工作目录可能被清理。',
+  'panel.noSearchResults': '没有找到相关会话',
+  'panel.noSearchHint': '更换关键词，或清除搜索。',
+  'panel.searchResults': '找到 {n} 个会话',
+  'panel.groupToday': '今天',
+  'panel.groupYesterday': '昨天',
+  'panel.groupEarlier': '更早',
+  'panel.groupUnknown': '时间未知',
+  'panel.moreFor': '“{title}”的更多操作',
+  'panel.creating': '正在创建…',
   'panel.renameTitle': '重命名独立会话',
   'panel.renameLabel': '名称',
   'panel.more': '更多操作',
@@ -126,7 +187,7 @@ export const zh: StandaloneDict = {
   'panel.titleRequired': '标题不能为空',
   'panel.actionFailed': '操作失败：{message}',
   'panel.retry': '重试',
-  'panel.archivedHint': '已删除的会话在 DSH 的归档视图中仍可恢复。',
+  'panel.archivedHint': '归档的会话可在 DSH 归档视图中恢复。',
   'panel.loading': '正在加载会话…',
   'entry.label': '新建独立会话',
   'launcher.creating': '正在创建独立会话…',
@@ -141,6 +202,7 @@ export const zh: StandaloneDict = {
   'footer.manage': '管理独立会话',
   'footer.manageCount': '管理独立会话（{n}）',
   'footer.manageTooltip': '打开独立会话列表，支持打开、重命名和删除。',
+  'time.yesterday': '昨天',
   'time.now': '刚刚',
   'time.minutes': '{n} 分钟前',
   'time.hours': '{n} 小时前',
@@ -164,10 +226,10 @@ export const zh: StandaloneDict = {
 export const en: StandaloneDict = {
   'panel.label': 'Standalone',
   'panel.title': 'Standalone Sessions',
-  'panel.description': 'Workspace-free sessions using the native DSH composer.',
-  'panel.new': 'New Standalone Session',
+  'panel.description': 'Start a conversation without selecting a workspace.',
+  'panel.new': 'New Session',
   'panel.empty': 'No standalone sessions yet',
-  'panel.emptyHint': 'Use the button below to create a blank session.',
+  'panel.emptyHint': 'Choose New Session to get started.',
   'panel.badge': 'Standalone',
   'panel.open': 'Open',
   'panel.rename': 'Rename',
@@ -181,14 +243,14 @@ export const en: StandaloneDict = {
   'panel.deleteBody':
     'The session leaves the list and the native session view (DSH implements deletion as archive), and remains recoverable from the archived view. The directory of an unused session is removed; a session that already carried messages keeps its directory.',
   'panel.deleteConfirm': 'Delete',
-  'panel.select': 'Select',
+  'panel.select': 'Manage Multiple',
   'panel.selectToolbar': 'Bulk selection',
-  'panel.selectAll': 'Select all',
+  'panel.selectAll': 'Select all results',
   'panel.selectAllLabel': 'Select all standalone sessions',
   'panel.selectionHint': 'Select rows, or use Select all.',
-  'panel.selectedCount': '{n} / {total} selected',
+  'panel.selectedCount': '{n} selected',
   'panel.selectRow': 'Select "{title}"',
-  'panel.batchDelete': 'Delete',
+  'panel.batchDelete': 'Archive selected',
   'panel.batchDeleteTitle': 'Delete {n} standalone session(s)?',
   'panel.batchDeleteBody':
     'The {n} selected session(s) will be archived and can be restored from the archived view.',
@@ -199,6 +261,36 @@ export const en: StandaloneDict = {
   'panel.batchPartial': 'Failed to archive {n} session(s); selection was kept.',
   'panel.deleteKeepDir': 'This session already carried messages; its directory is retained.',
   'panel.cancel': 'Cancel',
+  'panel.searchPlaceholder': 'Search session titles',
+  'panel.searchLabel': 'Search session titles',
+  'panel.clearSearch': 'Clear search',
+  'panel.batchManage': 'Manage Multiple',
+  'panel.done': 'Done',
+  'panel.selectAllResults': 'Select all results',
+  'panel.selectedItems': '{n} selected',
+  'panel.archiveSelected': 'Archive selected',
+  'panel.archive': 'Archive',
+  'panel.archiveTitle': 'Archive this session?',
+  'panel.archiveBody': 'It will leave the list and can be restored from DSH’s archive view.',
+  'panel.archiveRunningTitle': 'Stop and archive this session?',
+  'panel.archiveRunningBody': 'This session is running. Archiving stops the current task; the session can be restored from DSH’s archive view.',
+  'panel.archiveConfirm': 'Archive',
+  'panel.stopAndArchive': 'Stop and Archive',
+  'panel.batchArchiveTitle': 'Archive {n} session(s)?',
+  'panel.batchArchiveBody': 'The selected sessions will leave the list and can be restored from DSH’s archive view.',
+  'panel.batchArchiveRunning': '{n} are running; continuing stops those tasks. Sessions can be restored from DSH’s archive view.',
+  'panel.batchArchiveConfirm': 'Archive {n} session(s)',
+  'panel.batchStopArchive': 'Stop and Archive',
+  'panel.archiveDirs': 'Unused working directories without user files may be cleaned up.',
+  'panel.noSearchResults': 'No matching sessions',
+  'panel.noSearchHint': 'Try another search, or clear it.',
+  'panel.searchResults': '{n} session(s) found',
+  'panel.groupToday': 'Today',
+  'panel.groupYesterday': 'Yesterday',
+  'panel.groupEarlier': 'Earlier',
+  'panel.groupUnknown': 'Unknown time',
+  'panel.moreFor': 'More actions for “{title}”',
+  'panel.creating': 'Creating…',
   'panel.renameTitle': 'Rename standalone session',
   'panel.renameLabel': 'Name',
   'panel.more': 'More actions',
@@ -206,7 +298,7 @@ export const en: StandaloneDict = {
   'panel.titleRequired': 'Title cannot be empty',
   'panel.actionFailed': 'Operation failed: {message}',
   'panel.retry': 'Retry',
-  'panel.archivedHint': 'Deleted sessions remain recoverable from the native archived view.',
+  'panel.archivedHint': 'Archived sessions can be restored from DSH’s archive view.',
   'panel.loading': 'Loading sessions…',
   'entry.label': 'New Standalone Session',
   'launcher.creating': 'Creating a standalone session…',
@@ -221,6 +313,7 @@ export const en: StandaloneDict = {
   'footer.manage': 'Manage standalone sessions',
   'footer.manageCount': 'Manage standalone sessions ({n})',
   'footer.manageTooltip': 'Open the standalone session list to open, rename or delete sessions.',
+  'time.yesterday': 'Yesterday',
   'time.now': 'Just now',
   'time.minutes': '{n} min ago',
   'time.hours': '{n} hr ago',

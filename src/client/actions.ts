@@ -87,8 +87,14 @@ export async function renameStandalone(
  * @param ctx - client root context.
  * @param sessionId - target session.
  */
-export async function archiveStandalone(ctx: ClientContext, sessionId: string): Promise<void> {
-  await ctx.workspaces.archiveSession(sessionId, { stopActivity: true })
+export async function archiveStandalone(
+  ctx: ClientContext,
+  sessionId: string,
+  options: { readonly stopActivity?: boolean } = {},
+): Promise<void> {
+  await ctx.workspaces.archiveSession(sessionId, {
+    stopActivity: options.stopActivity ?? true,
+  })
 }
 
 /** One failed session in a batch archive operation. */
@@ -115,12 +121,15 @@ export async function archiveStandalones(
   ctx: ClientContext,
   sessionIds: readonly string[],
   onProgress?: (done: number, total: number) => void,
+  shouldStopActivity?: (sessionId: string) => boolean,
 ): Promise<BatchArchiveResult> {
   const archived: string[] = []
   const failed: BatchArchiveFailure[] = []
   for (const [index, sessionId] of sessionIds.entries()) {
     try {
-      await archiveStandalone(ctx, sessionId)
+      await archiveStandalone(ctx, sessionId, {
+        stopActivity: shouldStopActivity?.(sessionId) ?? true,
+      })
       archived.push(sessionId)
     } catch (reason) {
       failed.push({ sessionId, message: messageOf(reason) })
