@@ -106,6 +106,11 @@ export function formatSessionTime(
   }
 }
 
+/** Canonical query used for scope changes: trim and case-fold only. */
+export function normalizeQuery(query: string): string {
+  return query.trim().toLocaleLowerCase()
+}
+
 /** Title fallback: trimmed title, then displayTitle, then localized untitled. */
 export function sessionTitle(row: SessionRow, t: Translate): string {
   const title = row.title?.trim()
@@ -131,7 +136,7 @@ export function filterSessionRows(
   t: Translate,
   query: string,
 ): SessionRow[] {
-  const needle = query.trim().toLocaleLowerCase()
+  const needle = normalizeQuery(query)
   if (needle === '') return [...rows]
   return rows.filter((row) => sessionTitle(row, t).toLocaleLowerCase().includes(needle))
 }

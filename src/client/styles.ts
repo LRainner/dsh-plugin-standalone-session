@@ -717,7 +717,26 @@ export const CSS = `
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 36px;
   margin-top: 24px;
+}
+.ss-panel .ss-toolsSelecting .ss-search {
+  flex: 0 1 360px;
+}
+.ss-panel .ss-toolsActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-inline-start: auto;
+  flex: none;
+}
+.ss-panel .ss-batchCount {
+  color: var(--ss-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .ss-panel .ss-search {
   display: flex;
@@ -733,9 +752,18 @@ export const CSS = `
   color: var(--ss-fg);
 }
 .ss-panel .ss-search:focus-within {
-  border-color: var(--ss-business);
-  outline: 2px solid var(--ss-focus);
-  outline-offset: 2px;
+  border-color: var(--dsw-alias-label-tertiary, var(--ss-secondary));
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-label-tertiary, var(--ss-secondary));
+}
+.ss-panel .ss-search input:focus-visible {
+  outline: none;
+}
+@media (forced-colors: active) {
+  .ss-panel .ss-search:focus-within {
+    outline: 2px solid ButtonText;
+    outline-offset: 2px;
+  }
 }
 .ss-panel .ss-searchIcon {
   flex: none;
@@ -782,37 +810,6 @@ export const CSS = `
 }
 .ss-panel .ss-batchManage {
   flex: none;
-}
-.ss-panel .ss-searchCount {
-  margin: 12px 0 0;
-  color: var(--ss-secondary);
-  font-size: 12px;
-  line-height: 18px;
-}
-.ss-panel .ss-batchToolbar {
-  padding-left: 4px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  min-height: 40px;
-  margin-top: 12px;
-  color: var(--ss-secondary);
-  font-size: 13px;
-  line-height: 20px;
-}
-.ss-panel .ss-batchToolbar .ss-selectAll {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ss-fg);
-}
-.ss-panel .ss-batchCount {
-  color: var(--ss-secondary);
-  font-variant-numeric: tabular-nums;
-}
-.ss-panel .ss-archiveSelected {
-  margin-inline-start: auto;
 }
 .ss-panel .ss-feedback {
   margin-top: 16px;
@@ -1187,7 +1184,24 @@ export const CSS = `
     padding: 24px 16px 32px;
   }
   .ss-panel .ss-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
     margin-top: 20px;
+  }
+  .ss-panel .ss-toolsSelecting .ss-search {
+    flex-basis: auto;
+  }
+  .ss-panel .ss-toolsActions {
+    min-width: 0;
+    margin-inline-start: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .ss-panel .ss-toolsSelecting .ss-toolsActions {
+    justify-content: flex-start;
   }
   .ss-panel .ss-row {
     grid-template-columns: 18px minmax(0, 1fr) 32px;
@@ -1207,19 +1221,12 @@ export const CSS = `
   }
 }
 @container ss-manager (width < 480px) {
-  .ss-panel .ss-tools {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .ss-panel .ss-search {
-    flex-basis: 100%;
-  }
   .ss-panel .ss-headerActions {
     width: 100%;
     justify-content: flex-start;
   }
-  .ss-panel .ss-archiveSelected {
-    margin-inline-start: 0;
+  .ss-panel .ss-toolsActions {
+    justify-content: flex-start;
   }
 }
 @media (pointer: coarse) {

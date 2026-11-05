@@ -104,7 +104,7 @@ dsh plugin --profile web add /absolute/path/to/dsh-plugin-standalone-session-0.1
 
 ```bash
 npm ci
-npm run check       # typecheck + build + 68 个单元测试
+npm run check       # typecheck + build + 69 个单元测试
 npm test
 ```
 

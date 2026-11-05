@@ -41,6 +41,7 @@ import {
   filterSessionRows,
   formatSessionTime,
   groupSessionRows,
+  normalizeQuery,
   sessionTitle,
 } from './format.js'
 import { NS } from './locales.js'
@@ -685,6 +686,7 @@ export function createStandalonePanel(ctx: ClientContext) {
     const t = props.t ?? fallbackT
     const { rows, loading } = useStandaloneRows(ctx)
     const [query, setQuery] = useState(() => rememberedQuery)
+    const [effectiveQuery, setEffectiveQuery] = useState(() => rememberedQuery)
     const [now, setNow] = useState(() => Date.now())
     const [busy, setBusy] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -701,9 +703,17 @@ export function createStandalonePanel(ctx: ClientContext) {
     const batchButtonRef = useRef<HTMLButtonElement>(null)
     const panelRef = useRef<HTMLElement>(null)
     const wasSelecting = useRef(false)
-    const previousQuery = useRef(query)
+    const composing = useRef(false)
+    const queryRef = useRef(query)
+    queryRef.current = query
+    const appliedQuery = useRef(normalizeQuery(effectiveQuery))
+    const selectionModeRef = useRef(selectionMode)
+    selectionModeRef.current = selectionMode
 
-    const filteredRows = useMemo(() => filterSessionRows(rows, t, query), [rows, query, t])
+    const filteredRows = useMemo(
+      () => filterSessionRows(rows, t, effectiveQuery),
+      [rows, effectiveQuery, t],
+    )
     const groups = useMemo(() => groupSessionRows(filteredRows, now), [filteredRows, now])
     const selected = useMemo(
       () => selectedRows(filteredRows, selectedIds),
@@ -729,11 +739,11 @@ export function createStandalonePanel(ctx: ClientContext) {
     }, [])
 
     useEffect(() => {
-      if (previousQuery.current === query) return
-      previousQuery.current = query
-      rememberedQuery = query
+      const normalized = normalizeQuery(effectiveQuery)
+      if (normalized === appliedQuery.current) return
+      appliedQuery.current = normalized
       if (selectionMode) setSelectedIds(new Set())
-    }, [query, selectionMode])
+    }, [effectiveQuery, selectionMode])
 
     const exitSelection = (): void => {
       setSelectionMode(false)
@@ -821,6 +831,7 @@ export function createStandalonePanel(ctx: ClientContext) {
       try {
         rememberedQuery = ''
         setQuery('')
+        setEffectiveQuery('')
         await startStandalone(ctx, t)
       } catch (reason) {
         setError(t('panel.actionFailed', { message: messageOf(reason) }))
@@ -932,8 +943,18 @@ export function createStandalonePanel(ctx: ClientContext) {
     }
 
     const count = t('panel.count', { n: rows.length })
-    const hasQuery = query.trim() !== ''
+    const hasQuery = normalizeQuery(effectiveQuery) !== ''
     const noRows = rows.length === 0
+    const changeQuery = (value: string): void => {
+      rememberedQuery = value
+      setQuery(value)
+      if (!composing.current) setEffectiveQuery(value)
+    }
+    const clearQuery = (): void => {
+      rememberedQuery = ''
+      setQuery('')
+      setEffectiveQuery('')
+    }
 
     return (
       <section ref={panelRef} className="ss-panel" aria-label={t('panel.title')}>
@@ -961,7 +982,7 @@ export function createStandalonePanel(ctx: ClientContext) {
             </div>
           </header>
 
-          <div className="ss-tools">
+          <div className={`ss-tools${selectionMode ? ' ss-toolsSelecting' : ''}`}>
             <div className="ss-search" role="search">
               <svg
                 className="ss-searchIcon"
@@ -980,7 +1001,14 @@ export function createStandalonePanel(ctx: ClientContext) {
                 placeholder={t('panel.searchPlaceholder')}
                 aria-label={t('panel.searchLabel')}
                 disabled={batchProgress !== null}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => changeQuery(event.target.value)}
+                onCompositionStart={() => {
+                  composing.current = true
+                }}
+                onCompositionEnd={() => {
+                  composing.current = false
+                  setEffectiveQuery(queryRef.current)
+                }}
               />
               {query !== '' ? (
                 <button
@@ -988,7 +1016,7 @@ export function createStandalonePanel(ctx: ClientContext) {
                   className="ss-clearSearch"
                   aria-label={t('panel.clearSearch')}
                   title={t('panel.clearSearch')}
-                  onClick={() => setQuery('')}
+                  onClick={clearQuery}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <path d="m3 3 8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -996,66 +1024,75 @@ export function createStandalonePanel(ctx: ClientContext) {
                 </button>
               ) : null}
             </div>
-            {rows.length > 0 ? (
-              <button
-                ref={batchButtonRef}
-                type="button"
-                className="ss-button ss-buttonQuiet ss-batchManage"
-                disabled={locked}
-                onClick={() => {
-                  if (selectionMode) exitSelection()
-                  else enterSelection()
-                }}
-              >
-                {selectionMode ? t('panel.done') : t('panel.batchManage')}
-              </button>
-            ) : null}
+            <div className="ss-toolsActions">
+              {selectionMode ? (
+                <>
+                  <label className="ss-selectAll">
+                    <span className="ss-check">
+                      <input
+                        ref={selectAllRef}
+                        type="checkbox"
+                        className="ss-checkInput"
+                        checked={state.all}
+                        disabled={locked || filteredRows.length === 0}
+                        aria-label={
+                          hasQuery
+                            ? t('panel.selectAllCurrent', { n: filteredRows.length })
+                            : t('panel.selectAllLabel')
+                        }
+                        onChange={toggleAll}
+                      />
+                      <span className="ss-checkBox" aria-hidden="true">
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="m2.5 6.2 2.3 2.3 4.7-5"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    <span>{t('panel.selectAllShort')}</span>
+                  </label>
+                  <span className="ss-batchCount">
+                    {t('panel.selectedItems', { n: state.count })}
+                  </span>
+                  <button
+                    type="button"
+                    className="ss-button ss-buttonQuiet ss-archiveSelected"
+                    disabled={locked || state.count === 0}
+                    onClick={beginBatch}
+                  >
+                    {t('panel.archiveSelected')}
+                  </button>
+                  <button
+                    type="button"
+                    className="ss-button ss-buttonQuiet"
+                    disabled={locked}
+                    onClick={exitSelection}
+                  >
+                    {t('panel.done')}
+                  </button>
+                </>
+              ) : rows.length > 0 ? (
+                <button
+                  ref={batchButtonRef}
+                  type="button"
+                  className="ss-button ss-buttonQuiet ss-batchManage"
+                  disabled={locked}
+                  onClick={enterSelection}
+                >
+                  {t('panel.batchManage')}
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          {hasQuery && rows.length > 0 ? (
-            <p className="ss-searchCount" aria-live="polite">
-              {t('panel.searchResults', { n: filteredRows.length })}
-            </p>
-          ) : null}
-
-          {selectionMode ? (
-            <div className="ss-batchToolbar">
-              <label className="ss-selectAll">
-                <span className="ss-check">
-                  <input
-                    ref={selectAllRef}
-                    type="checkbox"
-                    className="ss-checkInput"
-                    checked={state.all}
-                    disabled={locked || filteredRows.length === 0}
-                    aria-label={t('panel.selectAllLabel')}
-                    onChange={toggleAll}
-                  />
-                  <span className="ss-checkBox" aria-hidden="true">
-                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="m2.5 6.2 2.3 2.3 4.7-5"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </span>
-                <span>{t('panel.selectAllResults')}</span>
-              </label>
-              <span className="ss-batchCount">{t('panel.selectedItems', { n: state.count })}</span>
-              <button
-                type="button"
-                className="ss-button ss-buttonQuiet ss-archiveSelected"
-                disabled={locked || state.count === 0}
-                onClick={beginBatch}
-              >
-                {t('panel.archiveSelected')}
-              </button>
-            </div>
-          ) : null}
+          <span className="ss-visuallyHidden" aria-live="polite">
+            {hasQuery ? t('panel.searchResults', { n: filteredRows.length }) : ''}
+          </span>
 
           {error !== null ? (
             <div className="ss-feedback ss-feedbackError" role="alert">

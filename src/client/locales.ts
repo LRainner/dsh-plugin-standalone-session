@@ -15,6 +15,8 @@ export type StandaloneKey =
   | 'panel.batchManage'
   | 'panel.done'
   | 'panel.selectAllResults'
+  | 'panel.selectAllShort'
+  | 'panel.selectAllCurrent'
   | 'panel.selectedItems'
   | 'panel.archiveSelected'
   | 'panel.archive'
@@ -156,6 +158,8 @@ export const zh: StandaloneDict = {
   'panel.batchManage': '批量管理',
   'panel.done': '完成',
   'panel.selectAllResults': '全选结果',
+  'panel.selectAllShort': '全选',
+  'panel.selectAllCurrent': '全选当前搜索结果（{n} 个）',
   'panel.selectedItems': '已选 {n} 项',
   'panel.archiveSelected': '归档所选',
   'panel.archive': '归档',
@@ -267,6 +271,8 @@ export const en: StandaloneDict = {
   'panel.batchManage': 'Manage Multiple',
   'panel.done': 'Done',
   'panel.selectAllResults': 'Select all results',
+  'panel.selectAllShort': 'Select all',
+  'panel.selectAllCurrent': 'Select all current search results ({n})',
   'panel.selectedItems': '{n} selected',
   'panel.archiveSelected': 'Archive selected',
   'panel.archive': 'Archive',

@@ -28,6 +28,7 @@ import {
   formatEarlierDate,
   formatSessionTime,
   groupSessionRows,
+  normalizeQuery,
   sessionDayKey,
   sessionTitle,
 } from '../src/client/format.js'
@@ -88,6 +89,11 @@ describe('title search and fallback', () => {
         t,
       ),
     ).toBe('panel.untitled')
+  })
+
+  it('normalizes only trim and case for selection scope', () => {
+    expect(normalizeQuery('  ReLease  ')).toBe('release')
+    expect(normalizeQuery('梳理 产品')).toBe('梳理 产品')
   })
 
   it('filters case-insensitively and ignores surrounding query whitespace', () => {
