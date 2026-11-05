@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.4...v0.2.5) (2026-11-05)
+
+
+### Bug Fixes
+
+* align selection controls with DSH checkbox states ([08322ad](https://github.com/LRainner/dsh-plugin-standalone-session/commit/08322ad0da3ac103094fe7506cb0869faa97b54d))
+
 ## [0.2.4](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.3...v0.2.4) (2026-10-30)
 
 
