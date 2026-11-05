@@ -165,11 +165,6 @@ export const CSS = `
   border-color: var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
   background: var(--dsw-alias-interactive-bg-hover, #e9ebee);
 }
-.ss-rowSelected,
-.ss-rowSelected:hover,
-.ss-rowSelected:focus-within {
-  border-color: var(--dsw-alias-state-business-primary, #3b82f6);
-}
 .ss-row[aria-disabled="true"] {
   cursor: default;
   opacity: 0.7;
@@ -621,7 +616,8 @@ export const CSS = `
   --ss-on-primary: var(--dsw-alias-label-primary-foreground, #fff);
   --ss-error: var(--dsw-alias-state-error-primary, #bd2737);
   --ss-focus: var(--dsw-focus-ring-color, var(--ss-business));
-  --ss-selected: color-mix(in srgb, var(--ss-business) 8%, var(--ss-bg));
+  --ss-selected: color-mix(in srgb, var(--ss-fg) 4%, transparent);
+  --ss-selected-hover: color-mix(in srgb, var(--ss-fg) 6%, transparent);
   container: ss-manager / inline-size;
   padding: 0;
   color: var(--ss-fg);
@@ -858,15 +854,20 @@ export const CSS = `
 .ss-panel .ss-row:last-child {
   border-bottom-color: transparent;
 }
-.ss-panel .ss-row:hover,
-.ss-panel .ss-row:focus-within {
+.ss-panel .ss-row:hover {
   background: var(--ss-hover);
 }
-.ss-panel .ss-rowSelected,
-.ss-panel .ss-rowSelected:hover,
-.ss-panel .ss-rowSelected:focus-within {
-  background: var(--dsw-alias-interactive-bg-active, var(--ss-hover));
-  border-color: transparent;
+.ss-panel .ss-rowSelected {
+  background: var(--ss-selected);
+}
+.ss-panel .ss-rowSelected:hover {
+  background: var(--ss-selected-hover);
+}
+@media (forced-colors: active) {
+  .ss-panel .ss-rowSelected {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
 }
 .ss-panel .ss-rowLead {
   width: 18px;
