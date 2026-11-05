@@ -5,6 +5,10 @@
  */
 import { createStandaloneSession } from './create.js'
 import type { ClientContext, Translate } from './dsh.js'
+import {
+  StandaloneLaunchCoordinator,
+  type StandaloneLaunchResult,
+} from './launcher.js'
 import { PANEL_ID } from './panels.js'
 import { showNotice } from './notice.js'
 
@@ -35,16 +39,42 @@ export async function createStandaloneSessionId(
   })
 }
 
+const coordinators = new WeakMap<ClientContext, StandaloneLaunchCoordinator>()
+
 /**
- * Create a standalone session and open its native conversation.
+ * The one creation coordinator shared by the sidebar, manager and command
+ * entries. It serializes concurrent presses and reuses only the last blank
+ * session this process created.
  * @param ctx - client root context.
  * @param t - localized copy.
- * @returns the created session id.
+ * @returns the context-local coordinator.
+ */
+export function standaloneCoordinator(
+  ctx: ClientContext,
+  t: Translate,
+): StandaloneLaunchCoordinator {
+  let coordinator = coordinators.get(ctx)
+  if (coordinator === undefined) {
+    coordinator = new StandaloneLaunchCoordinator({
+      sessions: () => ctx.sessions.list.getSnapshot(),
+      archivedSessionIds: () => ctx.workspaces.list.getSnapshot().archivedSessionIds,
+      create: () => createStandaloneSessionId(ctx, t),
+    })
+    coordinators.set(ctx, coordinator)
+  }
+  return coordinator
+}
+
+/**
+ * Create or reuse a blank session, then open its native conversation.
+ * @param ctx - client root context.
+ * @param t - localized copy.
+ * @returns the launched session id.
  */
 export async function startStandalone(ctx: ClientContext, t: Translate): Promise<string> {
-  const sessionId = await createStandaloneSessionId(ctx, t)
-  ctx.uiWorkspace.openSession(sessionId)
-  return sessionId
+  const result: StandaloneLaunchResult = await standaloneCoordinator(ctx, t).launch()
+  ctx.uiWorkspace.openSession(result.sessionId)
+  return result.sessionId
 }
 
 /**

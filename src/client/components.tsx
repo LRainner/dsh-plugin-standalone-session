@@ -19,10 +19,10 @@ import { isStandaloneCwd } from '../shared/standalone.js'
 import {
   archiveStandalone,
   archiveStandalones,
-  createStandaloneSessionId,
   messageOf,
   openManagementPanel,
   renameStandalone,
+  standaloneCoordinator,
   startStandalone,
 } from './actions.js'
 import {
@@ -36,7 +36,6 @@ import {
   armStandaloneLauncher,
   clearStandaloneLauncherArm,
   isStandaloneLauncherArmed,
-  StandaloneLaunchCoordinator,
 } from './launcher.js'
 import {
   filterSessionRows,
@@ -208,11 +207,7 @@ export function createManageFooterAction(ctx: ClientContext) {
  */
 export function createStandaloneLauncher(ctx: ClientContext) {
   const fallbackT = ctx.locale.bind(NS)
-  const coordinator = new StandaloneLaunchCoordinator({
-    sessions: () => ctx.sessions.list.getSnapshot(),
-    archivedSessionIds: () => ctx.workspaces.list.getSnapshot().archivedSessionIds,
-    create: () => createStandaloneSessionId(ctx, fallbackT),
-  })
+  const coordinator = standaloneCoordinator(ctx, fallbackT)
 
   return function StandaloneLauncher(props: LocalizedProps): ReactElement {
     const t = props.t ?? fallbackT
@@ -1198,6 +1193,29 @@ export function createStandalonePanel(ctx: ClientContext) {
                               role="menu"
                               ref={menuRef}
                               onClick={(event) => event.stopPropagation()}
+                              onKeyDown={(event) => {
+                                const items = Array.from(
+                                  event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                                    'button:not([disabled])',
+                                  ),
+                                )
+                                if (items.length === 0) return
+                                const current = items.indexOf(
+                                  document.activeElement as HTMLButtonElement,
+                                )
+                                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                                  event.preventDefault()
+                                  const delta = event.key === 'ArrowDown' ? 1 : -1
+                                  const next = (current + delta + items.length) % items.length
+                                  items[next]?.focus()
+                                } else if (event.key === 'Home') {
+                                  event.preventDefault()
+                                  items[0]?.focus()
+                                } else if (event.key === 'End') {
+                                  event.preventDefault()
+                                  items[items.length - 1]?.focus()
+                                }
+                              }}
                             >
                               <button
                                 type="button"
