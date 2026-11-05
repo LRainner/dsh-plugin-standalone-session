@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.6...v0.2.7) (2026-11-05)
+
+
+### Bug Fixes
+
+* soften selected manager row background ([2051657](https://github.com/LRainner/dsh-plugin-standalone-session/commit/20516573b44c90029b67bffb6ea7d46eb462deac))
+
 ## [0.2.6](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.5...v0.2.6) (2026-11-05)
 
 
