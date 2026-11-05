@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.5...v0.2.6) (2026-11-05)
+
+
+### Bug Fixes
+
+* stabilize manager tools across selection mode ([788a17e](https://github.com/LRainner/dsh-plugin-standalone-session/commit/788a17ef60656e1a5ed88926e0d874d17683116b))
+
 ## [0.2.5](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.4...v0.2.5) (2026-11-05)
 
 
