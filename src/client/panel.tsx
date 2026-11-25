@@ -143,6 +143,16 @@ export function createStandalonePanel(ctx: ClientContext) {
       () => selectionState(filteredRows, selectedIds),
       [filteredRows, selectedIds],
     )
+    // The batch target set is frozen when the dialog opens, but running/blank
+    // must come from the live snapshot: a session that starts running while the
+    // confirmation is open has to appear in the stop warning.
+    const liveBatchTargets = useMemo(
+      () =>
+        batchTargets === null
+          ? null
+          : batchTargets.map((target) => rows.find((row) => row.id === target.id) ?? target),
+      [batchTargets, rows],
+    )
     const locked = creating || batchProgress !== null
 
     useEffect(() => {
@@ -342,12 +352,13 @@ export function createStandalonePanel(ctx: ClientContext) {
       setError(null)
       announce(t('panel.batchDeleting', { done: 0, total: targets.length }))
       try {
-        const stopActivity = new Map(targets.map((row) => [row.id, row.running]))
         const result = await archiveStandalones(
           ctx,
           targets.map((row) => row.id),
           (done, total) => setBatchProgress({ done, total }),
-          (sessionId) => stopActivity.get(sessionId) === true,
+          // Already-running sessions keep the warning the dialog showed. Re-read
+          // per item so a session that started meanwhile is never stopped silently.
+          (sessionId) => ctx.sessions.list.getSnapshot().byId[sessionId]?.running === true,
         )
         setSelectedIds(new Set(result.failed.map((failure) => failure.sessionId)))
         if (result.failed.length === 0) {
@@ -732,7 +743,7 @@ export function createStandalonePanel(ctx: ClientContext) {
         </div>
         {batchTargets !== null ? (
           <BatchArchiveDialog
-            targets={batchTargets}
+            targets={liveBatchTargets ?? batchTargets}
             t={t}
             progress={batchProgress}
             closeBlockedHint={t('dialog.closeBlocked')}
