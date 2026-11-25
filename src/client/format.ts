@@ -26,7 +26,6 @@ export function relativeTimeLabel(
   return t('time.days', { n })
 }
 
-
 /** Natural-day bucket used by the manager list. */
 export type SessionDayKey = 'today' | 'yesterday' | 'earlier' | 'unknown'
 
@@ -68,6 +67,22 @@ export function activeLocale(): string {
   return 'en'
 }
 
+/** One formatter per locale and year mode; constructing these per row is costly. */
+const earlierDateFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function earlierDateFormatter(locale: string, withYear: boolean): Intl.DateTimeFormat {
+  const key = `${locale}\u0000${withYear ? 'year' : 'plain'}`
+  const cached = earlierDateFormatters.get(key)
+  if (cached !== undefined) return cached
+  const formatter = new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    ...(withYear ? { year: 'numeric' } : {}),
+  })
+  earlierDateFormatters.set(key, formatter)
+  return formatter
+}
+
 /** Earlier-than-yesterday date label; includes the year when it differs. */
 export function formatEarlierDate(
   timestamp: number,
@@ -77,11 +92,7 @@ export function formatEarlierDate(
   if (!Number.isFinite(timestamp) || timestamp <= 0) return ''
   const date = new Date(timestamp)
   const current = new Date(now)
-  return new Intl.DateTimeFormat(locale, {
-    month: 'short',
-    day: 'numeric',
-    ...(date.getFullYear() === current.getFullYear() ? {} : { year: 'numeric' }),
-  }).format(date)
+  return earlierDateFormatter(locale, date.getFullYear() !== current.getFullYear()).format(date)
 }
 
 /**

@@ -8,6 +8,7 @@ export const CSS = `
   height: 100%;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 32px clamp(20px, 5vw, 56px) 56px;
   color: var(--dsw-alias-label-primary, #1f2328);
   background: var(--dsw-specific-main-fill, transparent);
@@ -50,9 +51,6 @@ export const CSS = `
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.ss-statusLineError {
-  color: var(--dsw-alias-state-error-primary, #d1242f);
 }
 .ss-count {
   color: var(--dsw-alias-label-tertiary, #818b98);
@@ -318,21 +316,6 @@ export const CSS = `
   cursor: default;
   opacity: 0.5;
 }
-.ss-rowMenuDanger {
-  color: var(--dsw-alias-state-error-primary, #d1242f) !important;
-}
-.ss-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.ss-statusDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.55;
-}
 .ss-stateRunning {
   color: var(--dsw-alias-state-business-primary, #2563eb);
   font-weight: 600;
@@ -382,27 +365,24 @@ export const CSS = `
   font-size: 12px;
   line-height: 18px;
 }
-.ss-dialogBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.28));
-  padding: 24px;
-}
 .ss-dialog {
-  width: 100%;
-  max-width: 440px;
-  max-height: calc(100vh - 48px);
-  overflow: auto;
   box-sizing: border-box;
+  width: min(440px, calc(100vw - 48px));
+  max-width: 440px;
+  max-height: min(720px, calc(100vh - 48px));
+  max-height: min(720px, calc(100dvh - 48px));
+  overflow: auto;
+  overscroll-behavior: contain;
   border-radius: var(--dsw-radius-lg, 14px);
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
   background: var(--dsw-alias-bg-layer-2, #fff);
+  color: var(--dsw-alias-label-primary, #1f2328);
   padding: 20px;
   box-shadow: var(--dsw-elevation-prominent, 0 18px 48px rgba(0, 0, 0, 0.22));
+}
+.ss-dialog::backdrop {
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.28));
+  overscroll-behavior: contain;
 }
 .ss-dialogTitle {
   margin: 0 0 6px;
@@ -515,7 +495,11 @@ export const CSS = `
   border-radius: 50%;
   border: 2px solid var(--dsw-alias-border-l2, rgba(128, 128, 128, 0.25));
   border-top-color: var(--dsw-alias-state-business-primary, #2563eb);
-  animation: ss-spin 900ms linear infinite;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ss-launcherSpinner {
+    animation: ss-spin 900ms linear infinite;
+  }
 }
 @keyframes ss-spin {
   to { transform: rotate(360deg); }
@@ -560,19 +544,31 @@ export const CSS = `
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #cfd3d6;
+  color: var(--dsw-alias-hovercard-label-secondary, #cfd3d6);
   font-size: 12px;
   line-height: 16px;
 }
-.ss-toast {
+.ss-toastRegion {
   position: fixed;
   left: 50%;
   bottom: 28px;
   transform: translateX(-50%);
   z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
   max-width: min(520px, calc(100vw - 40px));
+  pointer-events: none;
+}
+.ss-toast {
   box-sizing: border-box;
-  padding: 9px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 100%;
+  padding: 8px 8px 8px 14px;
   border-radius: var(--dsw-radius-md, 10px);
   border: 0.5px solid var(--dsw-alias-border-l4, rgba(128, 128, 128, 0.35));
   background: var(--dsw-alias-toast-bg, var(--dsw-alias-bg-layer-2));
@@ -581,6 +577,34 @@ export const CSS = `
   font-size: 13px;
   line-height: 19px;
   pointer-events: auto;
+}
+.ss-toastText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ss-toastClose {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.ss-toastClose:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.ss-toastClose:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
 }
 .ss-toastError {
   color: var(--dsw-alias-state-error-primary, #d1242f);
@@ -592,16 +616,9 @@ export const CSS = `
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
-}
-@media (hover: none) {
-  .ss-rowMenuButton { opacity: 1; }
-}
-@media (max-width: 640px) {
-  .ss-panel { padding: 20px 14px 40px; }
-  .ss-row { flex-wrap: nowrap; gap: 10px; }
 }
 /* Manager refresh: quiet native list, single content axis, theme-token surfaces. */
 .ss-panel {
@@ -705,7 +722,8 @@ export const CSS = `
   border-color: var(--ss-line);
   background: transparent;
 }
-.ss-panel .ss-button:disabled {
+.ss-panel .ss-button:disabled,
+.ss-panel .ss-button[aria-disabled="true"] {
   opacity: 0.5;
   cursor: default;
 }
@@ -953,9 +971,9 @@ export const CSS = `
   opacity: 0.5;
 }
 .ss-panel .ss-rowLead .ss-check {
-  width: 32px;
-  height: 32px;
-  margin: -7px;
+  width: 44px;
+  height: 44px;
+  margin: -12px;
 }
 .ss-panel .ss-rowMain {
   display: flex;
@@ -976,6 +994,18 @@ export const CSS = `
 }
 .ss-panel .ss-rowMain:disabled {
   cursor: default;
+}
+.ss-panel .ss-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 64px;
+}
+.ss-panel .ss-row.ss-rowSelecting {
+  grid-template-columns: 18px minmax(0, 1fr);
+  cursor: pointer;
+}
+.ss-panel .ss-rowMainSelecting {
+  grid-column: 2;
+  cursor: pointer;
 }
 .ss-panel .ss-rowTitleRow {
   display: flex;
@@ -1073,6 +1103,25 @@ export const CSS = `
   font-size: 13px;
   line-height: 20px;
 }
+/* Top layer: escapes the list's scroll container, placed by JS with a flip.
+   Guarded, so a browser without the Popover API keeps the inline fallback. */
+@supports selector(:popover-open) {
+  .ss-panel .ss-rowMenu[popover] {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    display: none;
+    max-height: min(320px, calc(100dvh - 16px));
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--dsw-specific-menu, var(--dsw-alias-bg-layer-2, #fff));
+    -webkit-backdrop-filter: var(--dsw-menu-backdrop-filter, none);
+    backdrop-filter: var(--dsw-menu-backdrop-filter, none);
+  }
+  .ss-panel .ss-rowMenu[popover]:popover-open {
+    display: flex;
+  }
+}
 .ss-panel .ss-empty {
   margin-top: 0;
   padding: 48px 16px;
@@ -1159,6 +1208,15 @@ export const CSS = `
 }
 .ss-panel .ss-dialogFooter {
   margin-top: 24px;
+}
+.ss-panel .ss-dialogHint {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--ss-secondary);
+  background: color-mix(in srgb, var(--ss-secondary) 10%, transparent);
+  font-size: 12px;
+  line-height: 18px;
 }
 .ss-panel .ss-error {
   margin-top: 12px;

@@ -10,16 +10,16 @@
 import type { ClientContext } from './dsh.js'
 import { patchComposer } from './adapters.js'
 import {
-  StandaloneToast,
+  StandaloneIcon,
   createHeroBadge,
   createLauncherEntryIcon,
   createManageFooterAction,
   createRowHover,
   createRowLeading,
   createStandaloneLauncher,
-  createStandalonePanel,
-  StandaloneIcon,
 } from './components.js'
+import { createStandalonePanel } from './panel.js'
+import { createStandaloneToast } from './toast.js'
 import { messageOf, openManagementPanel, startStandalone } from './actions.js'
 import { NS, en, zh } from './locales.js'
 import { showNotice } from './notice.js'
@@ -144,7 +144,7 @@ export function apply(ctx: ClientContext): void {
         id: 'standalone-session-toast',
         order: 1000,
       },
-      StandaloneToast,
+      createStandaloneToast(ctx),
     ),
   )
 
