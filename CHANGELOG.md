@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.7...v0.3.0) (2026-11-25)
+
+
+### Features
+
+* align standalone session manager with modern web platform practices ([#10](https://github.com/LRainner/dsh-plugin-standalone-session/issues/10)) ([7ed53ee](https://github.com/LRainner/dsh-plugin-standalone-session/commit/7ed53ee59ae7d326eb23351de5b226906c28d27f))
+
 ## [0.2.7](https://github.com/LRainner/dsh-plugin-standalone-session/compare/v0.2.6...v0.2.7) (2026-11-05)
 
 
