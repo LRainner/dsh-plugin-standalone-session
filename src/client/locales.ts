@@ -75,6 +75,8 @@ export type StandaloneKey =
   | 'panel.renameLabel'
   | 'panel.more'
   | 'panel.save'
+  | 'panel.saving'
+  | 'panel.batchDone'
   | 'panel.titleRequired'
   | 'panel.actionFailed'
   | 'panel.retry'
@@ -99,6 +101,9 @@ export type StandaloneKey =
   | 'time.hours'
   | 'time.days'
   | 'toast.manageFailed'
+  | 'toast.region'
+  | 'toast.close'
+  | 'dialog.closeBlocked'
   | 'hero.badge'
   | 'hero.hint'
   | 'row.mark'
@@ -188,6 +193,8 @@ export const zh: StandaloneDict = {
   'panel.renameLabel': '名称',
   'panel.more': '更多操作',
   'panel.save': '保存',
+  'panel.saving': '保存中…',
+  'panel.batchDone': '已归档 {n} 个会话',
   'panel.titleRequired': '标题不能为空',
   'panel.actionFailed': '操作失败：{message}',
   'panel.retry': '重试',
@@ -212,6 +219,9 @@ export const zh: StandaloneDict = {
   'time.hours': '{n} 小时前',
   'time.days': '{n} 天前',
   'toast.manageFailed': '无法打开管理面板：{message}',
+  'toast.region': '通知',
+  'toast.close': '关闭通知',
+  'dialog.closeBlocked': '操作进行中，完成后才能关闭。',
   'hero.badge': '独立会话 · 无工作区',
   'hero.hint': '不隶属于任何工作区',
   'row.mark': '独',
@@ -301,6 +311,8 @@ export const en: StandaloneDict = {
   'panel.renameLabel': 'Name',
   'panel.more': 'More actions',
   'panel.save': 'Save',
+  'panel.saving': 'Saving…',
+  'panel.batchDone': 'Archived {n} session(s)',
   'panel.titleRequired': 'Title cannot be empty',
   'panel.actionFailed': 'Operation failed: {message}',
   'panel.retry': 'Retry',
@@ -325,6 +337,9 @@ export const en: StandaloneDict = {
   'time.hours': '{n} hr ago',
   'time.days': '{n} days ago',
   'toast.manageFailed': 'Could not open the manager: {message}',
+  'toast.region': 'Notifications',
+  'toast.close': 'Close notification',
+  'dialog.closeBlocked': 'This dialog can be closed when the operation finishes.',
   'hero.badge': 'Standalone · No workspace',
   'hero.hint': 'Not attached to any workspace',
   'row.mark': 'S',
